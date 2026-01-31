@@ -1,0 +1,137 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nexus-conversational-ai"
+version = "2.0.0"
+description = "Enterprise-grade Conversational AI Engine with Transformer-based NLU, Multi-turn Dialogue Management, and Real-time Analytics"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Raghav Shukla", email = "raghav@example.com"}
+]
+keywords = [
+    "conversational-ai", "nlp", "transformers", "chatbot", 
+    "dialogue-management", "intent-classification", "ner",
+    "fastapi", "machine-learning", "deep-learning"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "torch>=2.1.0",
+    "transformers>=4.36.0",
+    "sentence-transformers>=2.2.2",
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "websockets>=12.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "httpx>=0.26.0",
+    "numpy>=1.26.0",
+    "scikit-learn>=1.4.0",
+    "rich>=13.7.0",
+    "typer>=0.9.0",
+    "python-dotenv>=1.0.0",
+    "structlog>=24.1.0",
+    "prometheus-client>=0.19.0",
+    "redis>=5.0.0",
+    "sqlalchemy>=2.0.25",
+    "alembic>=1.13.0",
+    "aiosqlite>=0.19.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "hypothesis>=6.92.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.11",
+    "pre-commit>=3.6.0",
+    "black>=24.1.0",
+    "isort>=5.13.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+]
+all = ["nexus-conversational-ai[dev,docs]"]
+
+[project.scripts]
+nexus = "nexus.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/raghavshuklaofficial/Conversation_AI_Chatbot"
+Documentation = "https://github.com/raghavshuklaofficial/Conversation_AI_Chatbot#readme"
+Repository = "https://github.com/raghavshuklaofficial/Conversation_AI_Chatbot"
+Issues = "https://github.com/raghavshuklaofficial/Conversation_AI_Chatbot/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+nexus = ["py.typed", "data/*.json", "data/*.yaml"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "ARG", # flake8-unused-arguments
+    "SIM", # flake8-simplify
+]
+ignore = ["E501", "B008", "B905"]
+
+[tool.ruff.isort]
+known-first-party = ["nexus"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-v --cov=nexus --cov-report=term-missing --cov-report=html"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["src/nexus"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]

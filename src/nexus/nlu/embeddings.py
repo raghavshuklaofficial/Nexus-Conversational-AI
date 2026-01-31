@@ -1,0 +1,272 @@
+"""
+Embedding Engine
+================
+
+High-performance semantic embedding generation using sentence transformers.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from functools import lru_cache
+from typing import Any, Sequence
+
+import numpy as np
+import structlog
+
+from nexus.config import NLUConfig
+
+logger = structlog.get_logger(__name__)
+
+
+class EmbeddingEngine:
+    """
+    Semantic embedding engine using sentence transformers.
+    
+    Provides high-quality sentence embeddings for semantic similarity,
+    clustering, and retrieval tasks.
+    
+    Features:
+        - Batch embedding for efficiency
+        - Embedding caching
+        - Multiple similarity metrics
+        - Dimensionality reduction support
+    
+    Example:
+        >>> engine = EmbeddingEngine(config)
+        >>> await engine.load()
+        >>> embedding = await engine.embed("Hello world")
+        >>> similar = await engine.find_similar("Hi there", candidates)
+    """
+    
+    def __init__(self, config: NLUConfig) -> None:
+        """
+        Initialize the embedding engine.
+        
+        Args:
+            config: NLU configuration
+        """
+        self.config = config
+        self._model = None
+        self._loaded = False
+        self._embedding_dim: int = 0
+        
+        # Simple in-memory cache
+        self._cache: dict[str, np.ndarray] = {}
+        self._cache_max_size = config.embedding_model if hasattr(config, 'embedding_cache_size') else 10000
+    
+    async def load(self) -> None:
+        """Load the embedding model."""
+        if self._loaded:
+            return
+        
+        logger.info("loading_embedding_engine", model=self.config.embedding_model)
+        
+        try:
+            from sentence_transformers import SentenceTransformer
+            
+            loop = asyncio.get_event_loop()
+            
+            self._model = await loop.run_in_executor(
+                None,
+                lambda: SentenceTransformer(
+                    self.config.embedding_model,
+                    device=self.config.device,
+                )
+            )
+            
+            # Get embedding dimension
+            test_embedding = self._model.encode("test", convert_to_numpy=True)
+            self._embedding_dim = len(test_embedding)
+            
+            self._loaded = True
+            logger.info(
+                "embedding_engine_loaded",
+                dimension=self._embedding_dim,
+            )
+            
+        except Exception as e:
+            logger.error("embedding_engine_load_failed", error=str(e))
+            raise
+    
+    async def embed(self, text: str, use_cache: bool = True) -> np.ndarray:
+        """
+        Generate embedding for a single text.
+        
+        Args:
+            text: Input text
+            use_cache: Whether to use/update cache
+        
+        Returns:
+            np.ndarray: Embedding vector
+        """
+        if not self._loaded:
+            raise RuntimeError("Engine not loaded. Call load() first.")
+        
+        # Check cache
+        if use_cache and text in self._cache:
+            return self._cache[text]
+        
+        loop = asyncio.get_event_loop()
+        
+        embedding = await loop.run_in_executor(
+            None,
+            lambda: self._model.encode(text, convert_to_numpy=True)
+        )
+        
+        # Update cache
+        if use_cache:
+            self._update_cache(text, embedding)
+        
+        return embedding
+    
+    async def embed_batch(
+        self,
+        texts: Sequence[str],
+        use_cache: bool = True,
+        batch_size: int = 32,
+    ) -> np.ndarray:
+        """
+        Generate embeddings for multiple texts.
+        
+        Args:
+            texts: List of input texts
+            use_cache: Whether to use/update cache
+            batch_size: Batch size for encoding
+        
+        Returns:
+            np.ndarray: Array of embedding vectors (N x D)
+        """
+        if not self._loaded:
+            raise RuntimeError("Engine not loaded")
+        
+        # Check which texts need embedding
+        embeddings = []
+        texts_to_embed = []
+        embed_indices = []
+        
+        for i, text in enumerate(texts):
+            if use_cache and text in self._cache:
+                embeddings.append((i, self._cache[text]))
+            else:
+                texts_to_embed.append(text)
+                embed_indices.append(i)
+        
+        # Embed new texts
+        if texts_to_embed:
+            loop = asyncio.get_event_loop()
+            
+            new_embeddings = await loop.run_in_executor(
+                None,
+                lambda: self._model.encode(
+                    texts_to_embed,
+                    convert_to_numpy=True,
+                    batch_size=batch_size,
+                    show_progress_bar=False,
+                )
+            )
+            
+            # Update cache and results
+            for idx, (text, emb) in enumerate(zip(texts_to_embed, new_embeddings)):
+                original_idx = embed_indices[idx]
+                embeddings.append((original_idx, emb))
+                if use_cache:
+                    self._update_cache(text, emb)
+        
+        # Sort by original index and stack
+        embeddings.sort(key=lambda x: x[0])
+        return np.stack([emb for _, emb in embeddings])
+    
+    async def similarity(
+        self,
+        text1: str,
+        text2: str,
+        metric: str = "cosine",
+    ) -> float:
+        """
+        Compute semantic similarity between two texts.
+        
+        Args:
+            text1: First text
+            text2: Second text
+            metric: Similarity metric ('cosine', 'euclidean', 'dot')
+        
+        Returns:
+            float: Similarity score
+        """
+        emb1, emb2 = await asyncio.gather(
+            self.embed(text1),
+            self.embed(text2),
+        )
+        
+        return self._compute_similarity(emb1, emb2, metric)
+    
+    async def find_similar(
+        self,
+        query: str,
+        candidates: Sequence[str],
+        top_k: int = 5,
+        threshold: float = 0.0,
+    ) -> list[tuple[int, str, float]]:
+        """
+        Find most similar texts from candidates.
+        
+        Args:
+            query: Query text
+            candidates: List of candidate texts
+            top_k: Number of results to return
+            threshold: Minimum similarity threshold
+        
+        Returns:
+            list[tuple[int, str, float]]: (index, text, similarity) tuples
+        """
+        query_emb = await self.embed(query)
+        candidate_embs = await self.embed_batch(candidates)
+        
+        # Compute all similarities
+        similarities = [
+            self._compute_similarity(query_emb, cand_emb, "cosine")
+            for cand_emb in candidate_embs
+        ]
+        
+        # Sort and filter
+        results = [
+            (i, candidates[i], sim)
+            for i, sim in enumerate(similarities)
+            if sim >= threshold
+        ]
+        results.sort(key=lambda x: x[2], reverse=True)
+        
+        return results[:top_k]
+    
+    def _compute_similarity(
+        self,
+        emb1: np.ndarray,
+        emb2: np.ndarray,
+        metric: str,
+    ) -> float:
+        """Compute similarity between two embeddings."""
+        if metric == "cosine":
+            return float(np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2)))
+        elif metric == "euclidean":
+            return float(1 / (1 + np.linalg.norm(emb1 - emb2)))
+        elif metric == "dot":
+            return float(np.dot(emb1, emb2))
+        else:
+            raise ValueError(f"Unknown metric: {metric}")
+    
+    def _update_cache(self, key: str, value: np.ndarray) -> None:
+        """Update cache with LRU-like eviction."""
+        if len(self._cache) >= 10000:  # Max cache size
+            # Remove oldest entry (simple FIFO for now)
+            oldest_key = next(iter(self._cache))
+            del self._cache[oldest_key]
+        self._cache[key] = value
+    
+    @property
+    def embedding_dimension(self) -> int:
+        """Get the embedding dimension."""
+        return self._embedding_dim
+    
+    def __repr__(self) -> str:
+        return f"EmbeddingEngine(loaded={self._loaded}, dim={self._embedding_dim})"

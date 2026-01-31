@@ -1,0 +1,39 @@
+# Prometheus Monitoring Configuration
+# ====================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'nexus-ai'
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Rule files
+rule_files: []
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Nexus API metrics
+  - job_name: 'nexus-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['nexus-api:8000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: nexus-api
+
+  # Redis metrics (if using redis-exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
