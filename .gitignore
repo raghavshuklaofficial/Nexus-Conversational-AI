@@ -96,6 +96,10 @@ Desktop.ini
 *.key
 secrets/
 
+# SSL / Certbot
+nginx/ssl/
+certbot/
+
 # Cache
 .cache/
 *.cache

@@ -607,8 +607,9 @@
     </main>
 
     <script>
-        // Configuration
-        const API_BASE = 'http://localhost:8000';
+        // Configuration — auto-detect protocol & host so it works on any domain
+        const API_BASE = `${window.location.protocol}//${window.location.host}`;
+        const WS_PROTOCOL = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         let sessionId = null;
         let ws = null;
         let messageCount = 0;
@@ -623,7 +624,7 @@
 
         // WebSocket connection
         function initWebSocket() {
-            ws = new WebSocket(`ws://localhost:8000/ws/chat`);
+            ws = new WebSocket(`${WS_PROTOCOL}//${window.location.host}/ws/chat`);
 
             ws.onopen = () => {
                 updateConnectionStatus(true);
