@@ -1,9 +1,6 @@
 """
-FastAPI Application Factory
-===========================
-
-Creates and configures the FastAPI application with all middleware,
-routes, and event handlers.
+FastAPI app setup - creates the app with middleware, routes,
+and manages engine lifecycle (startup/shutdown).
 """
 
 from __future__ import annotations
@@ -28,11 +25,7 @@ logger = structlog.get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """
-    Application lifespan manager.
-    
-    Handles startup and shutdown events, including model loading.
-    """
+    """Startup: load models. Shutdown: cleanup sessions."""
     logger.info("application_starting")
     
     # Initialize conversation engine
@@ -51,23 +44,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 def create_app(config: NexusConfig | None = None) -> FastAPI:
-    """
-    Create and configure the FastAPI application.
-    
-    Args:
-        config: Optional configuration override
-    
-    Returns:
-        FastAPI: Configured application instance
-    """
+    """Create and configure the FastAPI app."""
     config = config or get_config()
     
     app = FastAPI(
         title="Nexus Conversational AI",
-        description=(
-            "Enterprise-grade Conversational AI Engine with transformer-based NLU, "
-            "multi-turn dialogue management, and real-time analytics."
-        ),
+        description="Conversational AI with transformer-based NLU and multi-turn dialogue.",
         version="2.0.0",
         docs_url="/docs",
         redoc_url="/redoc",

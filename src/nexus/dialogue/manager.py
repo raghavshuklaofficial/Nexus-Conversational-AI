@@ -1,8 +1,6 @@
 """
-Dialogue Manager
-================
-
-Orchestrates dialogue flow, response selection, and conversation management.
+Dialogue manager - picks the right handler or template response
+based on the current dialogue state.
 """
 
 from __future__ import annotations
@@ -23,25 +21,8 @@ logger = structlog.get_logger(__name__)
 
 class DialogueManager:
     """
-    Central dialogue management system.
-    
-    Coordinates response generation using:
-    - Intent handlers for specific intent processing
-    - Response templates with dynamic filling
-    - Semantic similarity for response selection
-    - Context-aware response adaptation
-    
-    Features:
-        - Multi-turn conversation tracking
-        - Entity slot filling
-        - Response variation
-        - Sentiment-aware responses
-        - Conversation repair strategies
-    
-    Example:
-        >>> manager = DialogueManager(config, embedding_engine)
-        >>> await manager.load()
-        >>> response = await manager.generate_response(state)
+    Coordinates response generation using intent handlers and
+    template responses. Handles multi-turn context and sentiment adaptation.
     """
     
     def __init__(
@@ -49,13 +30,6 @@ class DialogueManager:
         config: DialogueConfig,
         embedding_engine: Any = None,
     ) -> None:
-        """
-        Initialize the dialogue manager.
-        
-        Args:
-            config: Dialogue configuration
-            embedding_engine: Optional embedding engine for semantic matching
-        """
         self.config = config
         self._embedding_engine = embedding_engine
         self._handler_registry = create_default_registry()
@@ -85,15 +59,7 @@ class DialogueManager:
         self,
         state: DialogueState,
     ) -> dict[str, Any]:
-        """
-        Generate a response for the given dialogue state.
-        
-        Args:
-            state: Current dialogue state with NLU results
-        
-        Returns:
-            dict: Response data including text, type, and suggestions
-        """
+        """Generate a response for the current dialogue state."""
         if not self._loaded:
             raise RuntimeError("Manager not loaded. Call load() first.")
         
@@ -127,7 +93,7 @@ class DialogueManager:
         if intent_name in self._response_templates:
             templates = self._response_templates[intent_name]
             
-            # Select response (could use semantic similarity here)
+            # pick a random response from the template list
             response_text = random.choice(templates)
             
             # Fill template slots with entities

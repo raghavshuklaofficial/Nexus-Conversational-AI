@@ -1,8 +1,5 @@
 """
-Command Line Interface
-======================
-
-CLI application for interacting with the Nexus Conversational AI.
+CLI for Nexus - interactive chat, server, and training commands.
 """
 
 from __future__ import annotations
@@ -34,9 +31,7 @@ def chat(
         help="Model configuration to use",
     ),
 ) -> None:
-    """
-    Start an interactive chat session with Nexus.
-    """
+    """Start an interactive chat session."""
     console.print(Panel.fit(
         "[bold cyan]Nexus Conversational AI[/bold cyan]\n"
         "[dim]Type 'quit' or 'exit' to end the conversation[/dim]",
@@ -115,9 +110,7 @@ def serve(
     reload: bool = typer.Option(False, "--reload", "-r", help="Enable auto-reload"),
     workers: int = typer.Option(1, "--workers", "-w", help="Number of workers"),
 ) -> None:
-    """
-    Start the API server.
-    """
+    """Start the API server."""
     import uvicorn
     
     console.print(Panel.fit(
@@ -149,9 +142,7 @@ def train(
     ),
     epochs: int = typer.Option(10, "--epochs", "-e", help="Number of training epochs"),
 ) -> None:
-    """
-    Train or fine-tune the conversational model.
-    """
+    """Train or fine-tune the model."""
     console.print(Panel.fit(
         "[bold cyan]Model Training[/bold cyan]\n"
         f"[dim]Data: {data_path}[/dim]\n"

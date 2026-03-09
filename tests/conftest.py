@@ -1,7 +1,4 @@
-"""
-Pytest Configuration and Fixtures
-==================================
-"""
+# Shared fixtures for all tests
 
 from __future__ import annotations
 

@@ -1,10 +1,4 @@
-"""
-NLU (Natural Language Understanding) Module
-============================================
-
-Advanced NLU components using transformer-based models for
-intent classification, entity extraction, and semantic understanding.
-"""
+# NLU components - intent classification, entity extraction, sentiment & embeddings
 
 from nexus.nlu.classifier import IntentClassifier
 from nexus.nlu.extractor import EntityExtractor

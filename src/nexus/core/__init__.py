@@ -1,6 +1,4 @@
-"""
-Core engine module for the Nexus Conversational AI.
-"""
+# Core engine, sessions, response types
 
 from nexus.core.engine import ConversationEngine
 from nexus.core.session import ConversationSession

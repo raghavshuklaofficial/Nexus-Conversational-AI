@@ -1,5 +1,5 @@
-# Docker Compose for Nexus Conversational AI
-# ==========================================
+# Nexus AI - docker compose
+# run: docker compose up -d
 
 services:
   # Main API Service

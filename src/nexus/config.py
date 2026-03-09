@@ -1,9 +1,6 @@
 """
-Configuration Management
-========================
-
-Centralized configuration using Pydantic settings with environment variable support,
-validation, and type safety.
+App configuration — uses pydantic-settings so everything can be
+overridden via environment variables (prefix: NEXUS_).
 """
 
 from __future__ import annotations

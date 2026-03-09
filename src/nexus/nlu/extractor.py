@@ -1,9 +1,6 @@
 """
-Entity Extraction
-=================
-
-Transformer-based Named Entity Recognition (NER) with support for
-custom entity types and resolution.
+Entity extraction using BERT NER + regex patterns for
+things like emails, phone numbers, dates, etc.
 """
 
 from __future__ import annotations
@@ -22,26 +19,11 @@ logger = structlog.get_logger(__name__)
 
 class EntityExtractor:
     """
-    Named Entity Recognition using transformer models.
-    
-    Extracts entities like names, dates, locations, and custom
-    domain-specific entities from user input.
-    
-    Features:
-        - Pre-trained NER model support
-        - Custom entity patterns via regex
-        - Entity resolution and normalization
-        - Contextual entity linking
-    
-    Example:
-        >>> extractor = EntityExtractor(config)
-        >>> await extractor.load()
-        >>> entities = await extractor.extract("Meet John at 3pm tomorrow")
-        >>> for e in entities:
-        ...     print(f"{e.type}: {e.text}")
+    Extracts named entities from text using a transformer NER model
+    plus custom regex patterns for structured entities.
     """
     
-    # Common regex patterns for custom entities
+    # regex patterns for common structured entities
     CUSTOM_PATTERNS: dict[str, str] = {
         "EMAIL": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",
         "PHONE": r"\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b",
@@ -52,7 +34,7 @@ class EntityExtractor:
         "NUMBER": r"\b\d+(?:,\d{3})*(?:\.\d+)?\b",
     }
     
-    # NER label mapping from BERT models
+    # mapping from various NER label schemes to our standard types
     LABEL_MAPPING: dict[str, str] = {
         "PER": "PERSON",
         "PERSON": "PERSON",
@@ -71,17 +53,11 @@ class EntityExtractor:
     }
     
     def __init__(self, config: NLUConfig) -> None:
-        """
-        Initialize the entity extractor.
-        
-        Args:
-            config: NLU configuration
-        """
         self.config = config
         self._pipeline = None
         self._loaded = False
         
-        # Compile regex patterns
+        # pre-compile the regex patterns once
         self._compiled_patterns = {
             name: re.compile(pattern, re.IGNORECASE)
             for name, pattern in self.CUSTOM_PATTERNS.items()
@@ -118,18 +94,7 @@ class EntityExtractor:
             raise
     
     async def extract(self, text: str) -> list[Entity]:
-        """
-        Extract entities from the given text.
-        
-        Combines transformer-based NER with regex patterns
-        for comprehensive entity extraction.
-        
-        Args:
-            text: Input text
-        
-        Returns:
-            list[Entity]: Extracted entities
-        """
+        """Extract entities from text using both NER model and regex."""
         if not self._loaded:
             raise RuntimeError("Extractor not loaded. Call load() first.")
         
@@ -193,7 +158,7 @@ class EntityExtractor:
                     text=match.group(),
                     type=entity_type,
                     value=self._normalize_value(entity_type, match.group()),
-                    confidence=1.0,  # Regex matches are certain
+                    confidence=1.0,  # regex match = certain
                     start_pos=start,
                     end_pos=end,
                 ))

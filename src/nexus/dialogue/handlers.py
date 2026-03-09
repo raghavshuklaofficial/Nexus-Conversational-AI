@@ -1,8 +1,6 @@
 """
-Intent Handlers
-===============
-
-Pluggable intent handling system for customizable response generation.
+Pluggable intent handlers - each handler knows how to respond to
+a specific intent type (greeting, help, fallback, etc.)
 """
 
 from __future__ import annotations
@@ -19,20 +17,7 @@ logger = structlog.get_logger(__name__)
 
 
 class IntentHandler(ABC):
-    """
-    Base class for intent handlers.
-    
-    Implement custom handlers for specific intents to provide
-    domain-specific response logic.
-    
-    Example:
-        >>> class BookingHandler(IntentHandler):
-        ...     intent = "booking"
-        ...     
-        ...     async def handle(self, state: DialogueState) -> dict:
-        ...         # Custom booking logic
-        ...         return {"text": "Let me help you with booking..."}
-    """
+    """Base class for intent handlers. Subclass and implement handle()."""
     
     intent: str = ""
     priority: int = 0
@@ -66,25 +51,14 @@ class IntentHandler(ABC):
 
 
 class HandlerRegistry:
-    """
-    Registry for intent handlers.
-    
-    Manages registration and lookup of handlers for different intents.
-    Supports priority-based handler selection and fallback handling.
-    """
+    """Registry for looking up the right handler based on intent."""
     
     def __init__(self) -> None:
-        """Initialize the handler registry."""
         self._handlers: dict[str, list[IntentHandler]] = {}
         self._default_handler: IntentHandler | None = None
     
     def register(self, handler: IntentHandler) -> None:
-        """
-        Register an intent handler.
-        
-        Args:
-            handler: Handler instance to register
-        """
+        """Register a handler for its intent."""
         intent = handler.intent
         
         if intent not in self._handlers:
@@ -106,15 +80,7 @@ class HandlerRegistry:
         self._default_handler = handler
     
     def get_handler(self, state: DialogueState) -> IntentHandler | None:
-        """
-        Get the appropriate handler for the given state.
-        
-        Args:
-            state: Current dialogue state
-        
-        Returns:
-            IntentHandler: Matching handler or default
-        """
+        """Find the best handler for this state, or return default."""
         intent = state.intent.name
         
         # Check registered handlers
@@ -131,15 +97,7 @@ class HandlerRegistry:
         intent: str,
         priority: int = 0,
     ) -> Callable[[type[IntentHandler]], type[IntentHandler]]:
-        """
-        Decorator for registering handlers.
-        
-        Example:
-            >>> @registry.handler("greeting")
-            ... class GreetingHandler(IntentHandler):
-            ...     async def handle(self, state):
-            ...         return {"text": "Hello!"}
-        """
+        """Decorator to register a handler class for an intent."""
         def decorator(cls: type[IntentHandler]) -> type[IntentHandler]:
             cls.intent = intent
             cls.priority = priority

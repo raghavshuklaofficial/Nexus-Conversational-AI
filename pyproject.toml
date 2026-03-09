@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nexus-conversational-ai"
 version = "2.0.0"
-description = "Enterprise-grade Conversational AI Engine with Transformer-based NLU, Multi-turn Dialogue Management, and Real-time Analytics"
+description = "Conversational AI engine with transformer-based NLU, dialogue management, and a FastAPI backend"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
@@ -18,7 +18,7 @@ keywords = [
     "fastapi", "machine-learning", "deep-learning"
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",

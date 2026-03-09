@@ -1,9 +1,4 @@
-"""
-Data Module
-===========
-
-Intent patterns, responses, and training data management.
-"""
+# Intent data and patterns
 
 from nexus.data.intents import (
     get_intent_patterns,

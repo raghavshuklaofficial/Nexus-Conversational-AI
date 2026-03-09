@@ -1,7 +1,4 @@
-"""
-Conversation Engine Tests
-=========================
-"""
+# Tests for the core conversation engine and session management
 
 from __future__ import annotations
 

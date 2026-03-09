@@ -1,8 +1,6 @@
 """
-Dialogue State
-==============
-
-State representation for dialogue management with context tracking.
+Dialogue state - wraps together the NLU results, session context,
+and whatever else the handlers need to generate a response.
 """
 
 from __future__ import annotations
@@ -19,21 +17,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class DialogueState:
-    """
-    Complete state representation for a dialogue turn.
-    
-    Encapsulates all information needed for response generation,
-    including NLU results, context, and session data.
-    
-    Attributes:
-        user_input: The original user message
-        intent: Classified intent with confidence
-        entities: Extracted entities
-        sentiment: Analyzed sentiment and score
-        session: Active conversation session
-        context: Additional context information
-        timestamp: State creation time
-    """
+    """Everything the dialogue manager needs for one turn of conversation."""
     
     user_input: str
     intent: IntentMatch

@@ -1,8 +1,5 @@
 """
-Dataset Utilities
-=================
-
-Dataset loading and preprocessing for model training.
+Dataset loading and preprocessing for training.
 """
 
 from __future__ import annotations
@@ -16,12 +13,7 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class ConversationDataset(Dataset):
-    """
-    PyTorch Dataset for conversation training data.
-    
-    Handles loading, preprocessing, and batching of intent
-    classification training data.
-    """
+    """PyTorch Dataset wrapping intent classification samples."""
     
     def __init__(
         self,
@@ -30,15 +22,6 @@ class ConversationDataset(Dataset):
         tokenizer: Any = None,
         max_length: int = 128,
     ) -> None:
-        """
-        Initialize the dataset.
-        
-        Args:
-            data_path: Path to JSON data file
-            data: Pre-loaded data (alternative to data_path)
-            tokenizer: Tokenizer for text encoding
-            max_length: Maximum sequence length
-        """
         self.max_length = max_length
         self.tokenizer = tokenizer
         self.samples: list[dict[str, Any]] = []
@@ -126,14 +109,9 @@ class ConversationDataset(Dataset):
 
 
 class IntentDataGenerator:
-    """
-    Generates synthetic training data for intent classification.
-    
-    Uses templates and variations to augment training data.
-    """
+    """Simple data augmentation — lowercase, capitalize, strip punctuation, etc."""
     
     def __init__(self) -> None:
-        """Initialize the generator."""
         self._variations = {
             "please": ["please", "kindly", "could you", "would you"],
             "want": ["want", "need", "would like", "require"],
@@ -145,16 +123,7 @@ class IntentDataGenerator:
         pattern: str,
         num_variations: int = 3,
     ) -> list[str]:
-        """
-        Generate variations of a pattern.
-        
-        Args:
-            pattern: Original pattern
-            num_variations: Number of variations to generate
-        
-        Returns:
-            list[str]: List of pattern variations
-        """
+        """Generate simple variations of a pattern."""
         variations = [pattern]
         
         # Simple augmentation strategies
@@ -180,16 +149,7 @@ class IntentDataGenerator:
         intents: dict[str, list[str]],
         augment: bool = True,
     ) -> list[dict[str, Any]]:
-        """
-        Generate training data from intent patterns.
-        
-        Args:
-            intents: Dict mapping intent names to patterns
-            augment: Whether to augment data
-        
-        Returns:
-            list: Training samples
-        """
+        """Build training samples from raw intent->patterns mapping."""
         result = []
         
         for intent_name, patterns in intents.items():

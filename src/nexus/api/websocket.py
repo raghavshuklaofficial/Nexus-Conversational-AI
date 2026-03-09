@@ -1,8 +1,6 @@
 """
-WebSocket Support
-=================
-
-Real-time WebSocket communication for live chat experiences.
+WebSocket handler for real-time chat. Manages connections,
+heartbeats, and message routing.
 """
 
 from __future__ import annotations
@@ -39,18 +37,9 @@ class WebSocketMessage(BaseModel):
 
 
 class ConnectionManager:
-    """
-    Manages WebSocket connections for real-time chat.
-    
-    Features:
-        - Connection tracking by session
-        - Broadcast capabilities
-        - Heartbeat management
-        - Graceful disconnection handling
-    """
+    """Tracks active WebSocket connections and their sessions."""
     
     def __init__(self) -> None:
-        """Initialize the connection manager."""
         self._connections: dict[UUID, WebSocket] = {}
         self._sessions: dict[UUID, ConversationSession] = {}
         self._heartbeat_tasks: dict[UUID, asyncio.Task] = {}

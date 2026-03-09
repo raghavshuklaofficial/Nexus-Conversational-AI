@@ -1,7 +1,4 @@
-"""
-Unit Tests for NLU Components
-=============================
-"""
+# Tests for NLU components (classifier, extractor, sentiment, embeddings)
 
 from __future__ import annotations
 

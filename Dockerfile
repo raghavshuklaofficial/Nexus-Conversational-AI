@@ -1,8 +1,6 @@
-# Dockerfile for Nexus Conversational AI
-# =======================================
-# Multi-stage build for optimal image size
+# Multi-stage build for Nexus AI
 
-# Stage 1: Builder
+# Stage 1: build wheels
 FROM python:3.11-slim as builder
 
 WORKDIR /app
@@ -18,12 +16,12 @@ COPY pyproject.toml ./
 RUN pip install --no-cache-dir build && \
     pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels .
 
-# Stage 2: Production
+# Stage 2: slim production image
 FROM python:3.11-slim as production
 
 WORKDIR /app
 
-# Create non-root user for security
+# non-root user
 RUN groupadd --gid 1000 nexus && \
     useradd --uid 1000 --gid 1000 --shell /bin/bash --create-home nexus
 

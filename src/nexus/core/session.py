@@ -1,9 +1,6 @@
 """
-Conversation Session Management
-===============================
-
-Manages individual conversation sessions with state tracking,
-context management, and persistence support.
+Session management for individual conversations — tracks history,
+context, entity memory, and metrics per session.
 """
 
 from __future__ import annotations
@@ -23,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class SessionMetrics(BaseModel):
-    """Metrics tracked for a conversation session."""
+    """Tracks stats for a conversation session."""
     
     total_turns: int = Field(default=0, ge=0)
     total_processing_time_ms: float = Field(default=0.0, ge=0)
@@ -41,12 +38,12 @@ class SessionMetrics(BaseModel):
 
 
 class EntityMemory(BaseModel):
-    """Memory store for extracted entities within a session."""
+    """Stores extracted entities within a session so we can reference them later."""
     
     entities: dict[str, list[Entity]] = Field(default_factory=dict)
     
     def add(self, entity: Entity) -> None:
-        """Add an entity to memory."""
+        """Add entity to memory, skipping duplicates."""
         if entity.type not in self.entities:
             self.entities[entity.type] = []
         
@@ -70,12 +67,7 @@ class EntityMemory(BaseModel):
 
 
 class ConversationContext(BaseModel):
-    """
-    Contextual information maintained throughout a conversation.
-    
-    Tracks topics, entities, user preferences, and other contextual
-    data that helps inform response generation.
-    """
+    """Tracks topics, entities, preferences and sentiment throughout a conversation."""
     
     # Active topics being discussed
     active_topics: list[str] = Field(default_factory=list)
@@ -126,7 +118,7 @@ class ConversationContext(BaseModel):
         """Update context based on a response."""
         # Update sentiment history
         self.sentiment_history.append(response.metadata.sentiment)
-        if len(self.sentiment_history) > 20:  # Keep last 20
+        if len(self.sentiment_history) > 20:  # don't let this grow forever
             self.sentiment_history.pop(0)
         
         # Update intent
@@ -139,25 +131,7 @@ class ConversationContext(BaseModel):
 
 
 class ConversationSession:
-    """
-    Manages a single conversation session.
-    
-    Maintains conversation history, context, and provides methods
-    for processing user inputs within the session scope.
-    
-    Attributes:
-        id: Unique session identifier
-        created_at: Session creation timestamp
-        last_activity: Last interaction timestamp
-        history: Conversation turns history
-        context: Contextual information
-        metrics: Session performance metrics
-    
-    Example:
-        >>> session = ConversationSession()
-        >>> response = await session.process("Hello!")
-        >>> print(response.text)
-    """
+    """Manages a single conversation — history, context, metrics."""
     
     def __init__(
         self,
@@ -165,14 +139,6 @@ class ConversationSession:
         max_history: int = 50,
         timeout_minutes: int = 30,
     ) -> None:
-        """
-        Initialize a new conversation session.
-        
-        Args:
-            session_id: Optional custom session ID
-            max_history: Maximum conversation turns to retain
-            timeout_minutes: Session timeout in minutes
-        """
         self.id = session_id or uuid4()
         self.created_at = datetime.utcnow()
         self.last_activity = self.created_at
@@ -215,18 +181,7 @@ class ConversationSession:
         self._engine = engine
     
     async def process(self, user_input: str) -> Response:
-        """
-        Process user input and generate a response.
-        
-        Args:
-            user_input: The user's message
-        
-        Returns:
-            Response: The generated response with metadata
-        
-        Raises:
-            RuntimeError: If no engine is bound to the session
-        """
+        """Process a message in this session's context."""
         if self._engine is None:
             raise RuntimeError("No conversation engine bound to session")
         

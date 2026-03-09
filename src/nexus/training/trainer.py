@@ -1,8 +1,6 @@
 """
-Model Trainer
-=============
-
-Modern PyTorch-based training pipeline for intent classification.
+Training pipeline for the intent classifier.
+Uses PyTorch with cosine annealing + early stopping.
 """
 
 from __future__ import annotations
@@ -23,22 +21,7 @@ logger = structlog.get_logger(__name__)
 
 
 class ModelTrainer:
-    """
-    Trainer for conversational AI models.
-    
-    Provides a modern training pipeline with:
-    - Transformer-based model fine-tuning
-    - Learning rate scheduling
-    - Early stopping
-    - Metrics tracking and visualization
-    - Model checkpointing
-    
-    Example:
-        >>> trainer = ModelTrainer(output_dir="models")
-        >>> await trainer.load_data("data/intents.json")
-        >>> metrics = await trainer.train(epochs=10)
-        >>> trainer.save_model()
-    """
+    """Handles model training — data loading, train loop, checkpointing."""
     
     def __init__(
         self,
@@ -46,14 +29,6 @@ class ModelTrainer:
         model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
         device: str = "auto",
     ) -> None:
-        """
-        Initialize the trainer.
-        
-        Args:
-            output_dir: Directory for saving models and metrics
-            model_name: Base model for fine-tuning
-            device: Device to use ('cpu', 'cuda', 'auto')
-        """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
@@ -72,13 +47,13 @@ class ModelTrainer:
         )
     
     def _resolve_device(self, device: str) -> str:
-        """Resolve 'auto' device to actual device."""
+        """Pick the best available device."""
         if device == "auto":
             import torch
             if torch.cuda.is_available():
                 return "cuda"
             elif torch.backends.mps.is_available():
-                return "mps"
+                return "mps"  # apple silicon
             return "cpu"
         return device
     
@@ -87,13 +62,7 @@ class ModelTrainer:
         data_path: str | None = None,
         augment: bool = True,
     ) -> None:
-        """
-        Load training data.
-        
-        Args:
-            data_path: Path to training data JSON
-            augment: Whether to augment data
-        """
+        """Load training data from file or built-in intents."""
         logger.info("loading_training_data", path=data_path)
         
         if data_path and Path(data_path).exists():
@@ -134,19 +103,7 @@ class ModelTrainer:
         validation_split: float = 0.1,
         early_stopping_patience: int = 3,
     ) -> dict[str, Any]:
-        """
-        Train the model.
-        
-        Args:
-            epochs: Number of training epochs
-            batch_size: Batch size
-            learning_rate: Learning rate
-            validation_split: Validation data fraction
-            early_stopping_patience: Epochs to wait before early stopping
-        
-        Returns:
-            dict: Final training metrics
-        """
+        """Run the training loop. Returns final metrics dict."""
         if not self._dataset:
             raise RuntimeError("No data loaded. Call load_data() first.")
         
@@ -200,7 +157,7 @@ class ModelTrainer:
         num_labels = self._dataset.num_labels
         
         class IntentClassifierModel(nn.Module):
-            """Simple intent classifier."""
+            """Feed-forward classifier on top of BOW features."""
             
             def __init__(self, input_dim: int, hidden_dim: int, num_classes: int):
                 super().__init__()
@@ -334,7 +291,7 @@ class ModelTrainer:
         return self._metrics.final_metrics
     
     def _texts_to_bow(self, texts: list[str], vocab_size: int) -> "torch.Tensor":
-        """Convert texts to bag-of-words representation."""
+        """Quick and dirty BOW via hashing trick."""
         import torch
         
         batch_size = len(texts)

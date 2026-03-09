@@ -1,9 +1,4 @@
-"""
-API Module
-==========
-
-FastAPI-based REST and WebSocket API for the conversational AI system.
-"""
+# FastAPI REST + WebSocket endpoints
 
 from nexus.api.app import create_app
 from nexus.api.routes import router

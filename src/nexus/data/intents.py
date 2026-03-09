@@ -1,9 +1,6 @@
 """
-Intent Data
-===========
-
-Comprehensive intent patterns and responses for the conversational AI system.
-All data is original and designed for maximum coverage and natural interaction.
+All the intent definitions - patterns, responses, and metadata.
+This is basically the "brain" of what the bot understands.
 """
 
 from __future__ import annotations
@@ -14,7 +11,7 @@ from typing import Any
 
 @dataclass
 class IntentData:
-    """Container for intent information."""
+    """Holds all info about a single intent."""
     
     name: str
     patterns: list[str]
@@ -25,7 +22,8 @@ class IntentData:
     context_set: str | None = None
 
 
-# Comprehensive intent database with original patterns
+# all our intent definitions - patterns are used for training the classifier,
+# responses are picked randomly during dialogue generation
 INTENT_DATABASE: dict[str, dict[str, Any]] = {
     "greeting": {
         "patterns": [
@@ -436,12 +434,7 @@ INTENT_DATABASE: dict[str, dict[str, Any]] = {
 
 
 def get_intent_patterns() -> dict[str, dict[str, Any]]:
-    """
-    Get all intent patterns for training and classification.
-    
-    Returns:
-        dict: Intent name to pattern/metadata mapping
-    """
+    """Return intent patterns for classification."""
     return {
         name: {
             "patterns": data["patterns"],
@@ -453,12 +446,7 @@ def get_intent_patterns() -> dict[str, dict[str, Any]]:
 
 
 def get_intent_responses() -> dict[str, list[str]]:
-    """
-    Get all intent responses for dialogue management.
-    
-    Returns:
-        dict: Intent name to response list mapping
-    """
+    """Return intent responses for the dialogue manager."""
     return {
         name: data["responses"]
         for name, data in INTENT_DATABASE.items()
@@ -466,15 +454,7 @@ def get_intent_responses() -> dict[str, list[str]]:
 
 
 def get_intent_data(intent_name: str) -> IntentData | None:
-    """
-    Get complete data for a specific intent.
-    
-    Args:
-        intent_name: Name of the intent
-    
-    Returns:
-        IntentData: Complete intent data or None if not found
-    """
+    """Get full data for a specific intent by name."""
     if intent_name not in INTENT_DATABASE:
         return None
     

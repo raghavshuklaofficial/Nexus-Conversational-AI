@@ -1,9 +1,5 @@
 """
-Response Models
-===============
-
-Structured response types for the conversation engine with rich metadata
-and serialization support.
+Response models and types used throughout the engine.
 """
 
 from __future__ import annotations
@@ -63,12 +59,7 @@ class IntentMatch(BaseModel):
 
 
 class ResponseMetadata(BaseModel):
-    """
-    Rich metadata about the response generation process.
-    
-    Provides transparency into the AI's decision-making for debugging,
-    analytics, and improving the conversation model.
-    """
+    """Metadata about how the response was generated - timing, NLU results, etc."""
     
     # Timing information
     processing_time_ms: float = Field(..., ge=0)
@@ -98,12 +89,7 @@ class ResponseMetadata(BaseModel):
 
 
 class Response(BaseModel):
-    """
-    Complete response from the conversation engine.
-    
-    Encapsulates the response text, type, and all associated metadata
-    for comprehensive conversation tracking.
-    """
+    """Complete response from the engine with text, suggestions, and metadata."""
     
     id: UUID = Field(default_factory=uuid4, description="Unique response identifier")
     text: str = Field(..., description="The response text")

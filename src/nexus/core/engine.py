@@ -1,9 +1,6 @@
 """
-Conversation Engine
-===================
-
-The main orchestrator for the Nexus Conversational AI system.
-Coordinates NLU, dialogue management, and response generation.
+Main conversation engine - coordinates NLU pipeline, dialogue
+management and response generation.
 """
 
 from __future__ import annotations
@@ -38,48 +35,24 @@ logger = structlog.get_logger(__name__)
 
 class ConversationEngine:
     """
-    Main conversation processing engine.
-    
-    Orchestrates the NLU pipeline, dialogue management, and response
-    generation for natural, context-aware conversations.
-    
-    Architecture:
-        1. Input preprocessing and normalization
-        2. Intent classification with confidence scoring
-        3. Entity extraction and resolution
-        4. Sentiment analysis
-        5. Dialogue state management
-        6. Response selection and generation
-        7. Post-processing and formatting
-    
-    Example:
-        >>> engine = ConversationEngine()
-        >>> await engine.initialize()
-        >>> response = await engine.process("Book a flight to Paris")
-        >>> print(response.text)
-        >>> print(response.metadata.detected_intent)
+    Main engine that ties together intent classification, entity extraction,
+    sentiment analysis, and dialogue management to process user messages.
     """
     
     def __init__(self, config: NexusConfig | None = None) -> None:
-        """
-        Initialize the conversation engine.
-        
-        Args:
-            config: Optional configuration. Uses default if not provided.
-        """
         self.config = config or get_config()
         self._initialized = False
         
-        # NLU components
+        # NLU components (initialized in initialize())
         self._intent_classifier: IntentClassifier | None = None
         self._entity_extractor: EntityExtractor | None = None
         self._sentiment_analyzer: SentimentAnalyzer | None = None
         self._embedding_engine: EmbeddingEngine | None = None
         
-        # Dialogue management
+        # Dialogue
         self._dialogue_manager: DialogueManager | None = None
         
-        # Session management
+        # Active sessions
         self._sessions: dict[UUID, ConversationSession] = {}
         self._session_lock = asyncio.Lock()
         
@@ -89,12 +62,7 @@ class ConversationEngine:
         )
     
     async def initialize(self) -> None:
-        """
-        Initialize all NLU components and load models.
-        
-        This method should be called before processing any inputs.
-        It loads transformer models and prepares the pipeline.
-        """
+        """Load all NLU models and set up the pipeline. Call this before processing."""
         if self._initialized:
             logger.warning("engine_already_initialized")
             return
@@ -143,19 +111,7 @@ class ConversationEngine:
         user_input: str,
         session: ConversationSession | None = None,
     ) -> Response:
-        """
-        Process user input and generate a response.
-        
-        Args:
-            user_input: The user's message text
-            session: Optional conversation session for context
-        
-        Returns:
-            Response: Complete response with text and metadata
-        
-        Raises:
-            RuntimeError: If engine is not initialized
-        """
+        """Process user input through NLU pipeline and generate a response."""
         if not self._initialized:
             raise RuntimeError("Engine not initialized. Call initialize() first.")
         
@@ -223,12 +179,9 @@ class ConversationEngine:
             return self._create_error_response(str(e), start_time)
     
     def _preprocess(self, text: str) -> str:
-        """Preprocess and normalize user input."""
-        # Remove excessive whitespace
-        text = " ".join(text.split())
-        # Basic normalization
-        text = text.strip()
-        return text
+        """Basic input cleanup."""
+        text = " ".join(text.split())  # collapse whitespace
+        return text.strip()
     
     def _build_response(
         self,
@@ -287,12 +240,7 @@ class ConversationEngine:
         )
     
     async def create_session(self) -> ConversationSession:
-        """
-        Create a new conversation session.
-        
-        Returns:
-            ConversationSession: New session bound to this engine
-        """
+        """Create a new conversation session."""
         async with self._session_lock:
             session = ConversationSession(
                 max_history=self.config.dialogue.max_history_turns,
@@ -309,12 +257,7 @@ class ConversationEngine:
         return self._sessions.get(session_id)
     
     async def cleanup_sessions(self) -> int:
-        """
-        Remove expired sessions.
-        
-        Returns:
-            int: Number of sessions removed
-        """
+        """Remove expired sessions, returns count of removed."""
         async with self._session_lock:
             expired = [
                 sid for sid, session in self._sessions.items()
@@ -334,16 +277,7 @@ class ConversationEngine:
         model_path: str | Path,
         config: NexusConfig | None = None,
     ) -> ConversationEngine:
-        """
-        Load a pre-trained conversation engine.
-        
-        Args:
-            model_path: Path to the model directory
-            config: Optional configuration override
-        
-        Returns:
-            ConversationEngine: Initialized engine
-        """
+        """Load engine from a saved model directory."""
         engine = cls(config)
         # Load custom model weights if available
         await engine.initialize()

@@ -1,8 +1,5 @@
 """
-Training Metrics
-================
-
-Metrics tracking and visualization for model training.
+Metrics tracking for training — loss, accuracy, plotting, etc.
 """
 
 from __future__ import annotations
@@ -30,12 +27,7 @@ class EpochMetrics:
 
 @dataclass
 class TrainingMetrics:
-    """
-    Complete training metrics tracking.
-    
-    Tracks loss, accuracy, and other metrics across training epochs
-    with support for visualization and export.
-    """
+    """Accumulates metrics across all epochs."""
     
     model_name: str = "nexus-intent-classifier"
     start_time: datetime = field(default_factory=datetime.utcnow)
@@ -137,12 +129,7 @@ class TrainingMetrics:
             json.dump(self.to_dict(), f, indent=2)
     
     def plot(self, save_path: str | None = None) -> None:
-        """
-        Plot training curves.
-        
-        Args:
-            save_path: Optional path to save the plot
-        """
+        """Plot loss and accuracy curves. Needs matplotlib."""
         try:
             import matplotlib.pyplot as plt
         except ImportError:
@@ -185,19 +172,9 @@ class TrainingMetrics:
 
 
 class MetricsLogger:
-    """
-    Real-time metrics logging during training.
-    
-    Provides formatted output for training progress.
-    """
+    """Prints training progress to stdout."""
     
     def __init__(self, total_epochs: int) -> None:
-        """
-        Initialize the logger.
-        
-        Args:
-            total_epochs: Total number of epochs
-        """
         self.total_epochs = total_epochs
         self._width = 80
     

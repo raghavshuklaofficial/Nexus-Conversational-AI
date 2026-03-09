@@ -1,9 +1,4 @@
-"""
-Training Module
-===============
-
-Modern PyTorch-based training pipeline for the conversational AI models.
-"""
+# Training pipeline - dataset, trainer, metrics
 
 from nexus.training.trainer import ModelTrainer
 from nexus.training.dataset import ConversationDataset

@@ -1,9 +1,4 @@
-"""
-Dialogue Management Module
-==========================
-
-Sophisticated dialogue state tracking and response generation.
-"""
+# Dialogue management - state tracking, handlers, response generation
 
 from nexus.dialogue.manager import DialogueManager
 from nexus.dialogue.state import DialogueState

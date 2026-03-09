@@ -1,25 +1,8 @@
 """
-Nexus Conversational AI Engine
-==============================
+Nexus Conversational AI
 
-Enterprise-grade conversational AI system with transformer-based NLU,
-multi-turn dialogue management, and real-time analytics.
-
-Features:
-    - Transformer-based intent classification and entity extraction
-    - Semantic similarity matching with sentence embeddings
-    - Multi-turn dialogue state tracking
-    - Context-aware response generation
-    - Real-time sentiment analysis
-    - Prometheus metrics and observability
-    - WebSocket and REST API support
-
-Example:
-    >>> from nexus import ConversationEngine
-    >>> engine = ConversationEngine.from_pretrained("nexus-base")
-    >>> response = await engine.process("Hello, how are you?")
-    >>> print(response.text)
-
+Transformer-based chatbot with intent classification, NER,
+sentiment analysis and multi-turn dialogue support.
 """
 
 from nexus.core.engine import ConversationEngine
@@ -39,5 +22,4 @@ __all__ = [
     "EntityExtractor",
     "DialogueManager",
     "DialogueState",
-    "__version__",
 ]

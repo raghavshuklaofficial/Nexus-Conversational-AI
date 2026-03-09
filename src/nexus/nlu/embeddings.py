@@ -1,8 +1,6 @@
 """
-Embedding Engine
-================
-
-High-performance semantic embedding generation using sentence transformers.
+Sentence embedding engine using sentence-transformers.
+Used for semantic similarity, finding similar texts, etc.
 """
 
 from __future__ import annotations
@@ -20,38 +18,15 @@ logger = structlog.get_logger(__name__)
 
 
 class EmbeddingEngine:
-    """
-    Semantic embedding engine using sentence transformers.
-    
-    Provides high-quality sentence embeddings for semantic similarity,
-    clustering, and retrieval tasks.
-    
-    Features:
-        - Batch embedding for efficiency
-        - Embedding caching
-        - Multiple similarity metrics
-        - Dimensionality reduction support
-    
-    Example:
-        >>> engine = EmbeddingEngine(config)
-        >>> await engine.load()
-        >>> embedding = await engine.embed("Hello world")
-        >>> similar = await engine.find_similar("Hi there", candidates)
-    """
+    """Generates sentence embeddings with optional caching and batch support."""
     
     def __init__(self, config: NLUConfig) -> None:
-        """
-        Initialize the embedding engine.
-        
-        Args:
-            config: NLU configuration
-        """
         self.config = config
         self._model = None
         self._loaded = False
         self._embedding_dim: int = 0
         
-        # Simple in-memory cache
+        # simple dict cache - good enough for our use case
         self._cache: dict[str, np.ndarray] = {}
         self._cache_max_size = config.embedding_model if hasattr(config, 'embedding_cache_size') else 10000
     
@@ -90,16 +65,7 @@ class EmbeddingEngine:
             raise
     
     async def embed(self, text: str, use_cache: bool = True) -> np.ndarray:
-        """
-        Generate embedding for a single text.
-        
-        Args:
-            text: Input text
-            use_cache: Whether to use/update cache
-        
-        Returns:
-            np.ndarray: Embedding vector
-        """
+        """Get embedding for a single text."""
         if not self._loaded:
             raise RuntimeError("Engine not loaded. Call load() first.")
         
@@ -126,17 +92,7 @@ class EmbeddingEngine:
         use_cache: bool = True,
         batch_size: int = 32,
     ) -> np.ndarray:
-        """
-        Generate embeddings for multiple texts.
-        
-        Args:
-            texts: List of input texts
-            use_cache: Whether to use/update cache
-            batch_size: Batch size for encoding
-        
-        Returns:
-            np.ndarray: Array of embedding vectors (N x D)
-        """
+        """Embed multiple texts at once. Returns (N, dim) array."""
         if not self._loaded:
             raise RuntimeError("Engine not loaded")
         
@@ -183,17 +139,7 @@ class EmbeddingEngine:
         text2: str,
         metric: str = "cosine",
     ) -> float:
-        """
-        Compute semantic similarity between two texts.
-        
-        Args:
-            text1: First text
-            text2: Second text
-            metric: Similarity metric ('cosine', 'euclidean', 'dot')
-        
-        Returns:
-            float: Similarity score
-        """
+        """Compute similarity between two texts."""
         emb1, emb2 = await asyncio.gather(
             self.embed(text1),
             self.embed(text2),
@@ -208,18 +154,7 @@ class EmbeddingEngine:
         top_k: int = 5,
         threshold: float = 0.0,
     ) -> list[tuple[int, str, float]]:
-        """
-        Find most similar texts from candidates.
-        
-        Args:
-            query: Query text
-            candidates: List of candidate texts
-            top_k: Number of results to return
-            threshold: Minimum similarity threshold
-        
-        Returns:
-            list[tuple[int, str, float]]: (index, text, similarity) tuples
-        """
+        """Find the top-k most similar texts from candidates."""
         query_emb = await self.embed(query)
         candidate_embs = await self.embed_batch(candidates)
         
@@ -256,9 +191,9 @@ class EmbeddingEngine:
             raise ValueError(f"Unknown metric: {metric}")
     
     def _update_cache(self, key: str, value: np.ndarray) -> None:
-        """Update cache with LRU-like eviction."""
-        if len(self._cache) >= 10000:  # Max cache size
-            # Remove oldest entry (simple FIFO for now)
+        """Add to cache, evict oldest if full."""
+        if len(self._cache) >= 10000:
+            # TODO: proper LRU eviction, this is just FIFO for now
             oldest_key = next(iter(self._cache))
             del self._cache[oldest_key]
         self._cache[key] = value

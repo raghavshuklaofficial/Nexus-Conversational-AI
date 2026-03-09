@@ -1,7 +1,4 @@
-"""
-API Integration Tests
-=====================
-"""
+# API integration tests
 
 from __future__ import annotations
 

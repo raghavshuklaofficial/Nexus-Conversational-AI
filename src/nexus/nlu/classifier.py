@@ -1,9 +1,7 @@
 """
-Intent Classification
-=====================
-
-Transformer-based intent classification using semantic similarity
-and fine-tuned classification models.
+Intent classification using sentence-transformers and cosine similarity.
+Pre-computes embeddings for all known intents at load time,
+then matches new inputs against them.
 """
 
 from __future__ import annotations
@@ -23,31 +21,11 @@ logger = structlog.get_logger(__name__)
 
 class IntentClassifier:
     """
-    Advanced intent classifier using sentence transformers.
-    
-    Uses semantic similarity matching with pre-computed intent embeddings
-    for robust, context-aware intent detection.
-    
-    Features:
-        - Multi-label classification support
-        - Confidence calibration
-        - Fallback detection
-        - Intent hierarchy support
-    
-    Example:
-        >>> classifier = IntentClassifier(config)
-        >>> await classifier.load()
-        >>> result = await classifier.classify("Book a flight to NYC")
-        >>> print(result.name, result.confidence)
+    Classifies user input into one of the predefined intents using
+    semantic similarity with sentence-BERT embeddings.
     """
     
     def __init__(self, config: NLUConfig) -> None:
-        """
-        Initialize the intent classifier.
-        
-        Args:
-            config: NLU configuration
-        """
         self.config = config
         self._model = None
         self._intent_embeddings: dict[str, np.ndarray] = {}
@@ -55,17 +33,17 @@ class IntentClassifier:
         self._loaded = False
     
     async def load(self) -> None:
-        """Load the classification model and intent embeddings."""
+        """Load the sentence-transformer model and compute intent embeddings."""
         if self._loaded:
             return
         
         logger.info("loading_intent_classifier", model=self.config.intent_model)
         
         try:
-            # Import here to avoid slow startup
+            # lazy import to keep startup fast
             from sentence_transformers import SentenceTransformer
             
-            # Load in thread pool to avoid blocking
+            # load model in threadpool so we don't block the event loop
             loop = asyncio.get_event_loop()
             self._model = await loop.run_in_executor(
                 None,
@@ -86,7 +64,7 @@ class IntentClassifier:
             raise
     
     async def _load_intent_embeddings(self) -> None:
-        """Load or compute embeddings for all intents."""
+        """Compute mean embedding for each intent from its training patterns."""
         from nexus.data.intents import get_intent_patterns
         
         intent_patterns = get_intent_patterns()
@@ -102,7 +80,7 @@ class IntentClassifier:
                 lambda p=patterns: self._model.encode(p, convert_to_numpy=True)
             )
             
-            # Store mean embedding for the intent
+            # store the mean embedding as the intent's "prototype"
             self._intent_embeddings[intent_name] = np.mean(embeddings, axis=0)
             self._intent_metadata[intent_name] = {
                 "description": data.get("description", ""),
@@ -114,16 +92,7 @@ class IntentClassifier:
         text: str,
         top_k: int = 3,
     ) -> IntentMatch:
-        """
-        Classify the intent of the given text.
-        
-        Args:
-            text: Input text to classify
-            top_k: Number of top intents to consider
-        
-        Returns:
-            IntentMatch: Best matching intent with confidence
-        """
+        """Classify input text and return the best matching intent."""
         if not self._loaded:
             raise RuntimeError("Classifier not loaded. Call load() first.")
         
@@ -169,18 +138,7 @@ class IntentClassifier:
         text: str,
         threshold: float = 0.3,
     ) -> list[IntentMatch]:
-        """
-        Get all intents above a confidence threshold.
-        
-        Useful for multi-intent detection scenarios.
-        
-        Args:
-            text: Input text to classify
-            threshold: Minimum confidence threshold
-        
-        Returns:
-            list[IntentMatch]: All matching intents above threshold
-        """
+        """Get all intents above a confidence threshold (for multi-intent scenarios)."""
         if not self._loaded:
             raise RuntimeError("Classifier not loaded")
         

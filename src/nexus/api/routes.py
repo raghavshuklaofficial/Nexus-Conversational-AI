@@ -1,8 +1,5 @@
 """
-API Routes
-==========
-
-REST API endpoints for the conversational AI system.
+REST API routes - chat, analyze, session management.
 """
 
 from __future__ import annotations
@@ -26,7 +23,7 @@ router = APIRouter(tags=["Conversation"])
 # Request/Response Models
 
 class MessageRequest(BaseModel):
-    """Request model for sending a message."""
+    """Chat message from the user."""
     
     text: str = Field(..., min_length=1, max_length=4096, description="User message text")
     session_id: UUID | None = Field(default=None, description="Optional session ID for context")
@@ -41,7 +38,7 @@ class MessageRequest(BaseModel):
 
 
 class MessageResponse(BaseModel):
-    """Response model for messages."""
+    """What we send back after processing a message."""
     
     id: str = Field(..., description="Response ID")
     text: str = Field(..., description="Response text")
@@ -57,7 +54,7 @@ class MessageResponse(BaseModel):
 
 
 class SessionResponse(BaseModel):
-    """Response model for session information."""
+    """Session info returned to client."""
     
     session_id: str
     created_at: str
@@ -66,7 +63,7 @@ class SessionResponse(BaseModel):
 
 
 class SessionHistoryResponse(BaseModel):
-    """Response model for session history."""
+    """Full conversation history for a session."""
     
     session_id: str
     turns: list[dict[str, Any]]
@@ -74,13 +71,13 @@ class SessionHistoryResponse(BaseModel):
 
 
 class AnalyzeRequest(BaseModel):
-    """Request model for text analysis."""
+    """Text to run through the NLU pipeline."""
     
     text: str = Field(..., min_length=1, max_length=4096)
 
 
 class AnalyzeResponse(BaseModel):
-    """Response model for text analysis."""
+    """NLU analysis results."""
     
     intent: dict[str, Any]
     entities: list[dict[str, Any]]
@@ -107,12 +104,7 @@ async def chat(
     request: MessageRequest,
     engine: ConversationEngine = Depends(get_engine),
 ) -> MessageResponse:
-    """
-    Send a message and receive a response.
-    
-    This is the main conversation endpoint. Optionally provide a session_id
-    for multi-turn conversations with context.
-    """
+    """Send a message, get a response. Pass session_id for multi-turn."""
     try:
         # Get or create session
         session: ConversationSession | None = None

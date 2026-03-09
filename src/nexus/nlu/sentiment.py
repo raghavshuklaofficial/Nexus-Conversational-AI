@@ -1,8 +1,7 @@
 """
-Sentiment Analysis
-==================
-
-Transformer-based sentiment analysis with fine-grained emotion detection.
+Sentiment analysis using Cardiff NLP's RoBERTa model.
+Outputs 5-class sentiment (very_negative to very_positive) with a
+continuous score from -1 to 1.
 """
 
 from __future__ import annotations
@@ -19,24 +18,7 @@ logger = structlog.get_logger(__name__)
 
 
 class SentimentAnalyzer:
-    """
-    Advanced sentiment analysis using transformer models.
-    
-    Provides both categorical sentiment labels and continuous
-    sentiment scores for nuanced emotional understanding.
-    
-    Features:
-        - 5-class sentiment classification
-        - Continuous sentiment scoring (-1 to 1)
-        - Emotion detection (joy, anger, sadness, etc.)
-        - Context-aware sentiment tracking
-    
-    Example:
-        >>> analyzer = SentimentAnalyzer(config)
-        >>> await analyzer.load()
-        >>> sentiment, score = await analyzer.analyze("I love this!")
-        >>> print(f"{sentiment.value}: {score}")
-    """
+    """Wraps the HuggingFace sentiment pipeline with 5-class mapping."""
     
     # Sentiment model for classification
     SENTIMENT_MODEL = "cardiffnlp/twitter-roberta-base-sentiment-latest"
@@ -49,12 +31,6 @@ class SentimentAnalyzer:
     }
     
     def __init__(self, config: NLUConfig) -> None:
-        """
-        Initialize the sentiment analyzer.
-        
-        Args:
-            config: NLU configuration
-        """
         self.config = config
         self._pipeline = None
         self._loaded = False
@@ -89,15 +65,7 @@ class SentimentAnalyzer:
             raise
     
     async def analyze(self, text: str) -> tuple[Sentiment, float]:
-        """
-        Analyze sentiment of the given text.
-        
-        Args:
-            text: Input text to analyze
-        
-        Returns:
-            tuple[Sentiment, float]: Sentiment category and continuous score (-1 to 1)
-        """
+        """Analyze sentiment. Returns (category, score) where score is -1 to 1."""
         if not self._loaded:
             raise RuntimeError("Analyzer not loaded. Call load() first.")
         
@@ -145,15 +113,7 @@ class SentimentAnalyzer:
         return Sentiment.VERY_POSITIVE
     
     async def analyze_detailed(self, text: str) -> dict[str, Any]:
-        """
-        Get detailed sentiment analysis with all scores.
-        
-        Args:
-            text: Input text
-        
-        Returns:
-            dict: Detailed sentiment information
-        """
+        """Get full breakdown with is_positive/is_negative flags and intensity."""
         sentiment, score = await self.analyze(text)
         
         return {
