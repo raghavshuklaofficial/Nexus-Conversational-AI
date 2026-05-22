@@ -1,898 +1,153 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus AI - Conversational Intelligence</title>
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #818cf8;
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-input: #334155;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --success: #10b981;
-            --error: #ef4444;
-            --warning: #f59e0b;
-            --border: #475569;
-            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            --gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header */
-        .header {
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-            padding: 1rem 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .logo-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--gradient);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .logo-text {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: var(--gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 9999px;
-            font-size: 0.875rem;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--success);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        /* Main Container */
-        .main-container {
-            flex: 1;
-            display: flex;
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-            padding: 2rem;
-            gap: 2rem;
-        }
-
-        /* Chat Container */
-        .chat-container {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-card);
-            border-radius: 24px;
-            border: 1px solid var(--border);
-            overflow: hidden;
-            box-shadow: var(--shadow);
-        }
-
-        .chat-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .chat-header h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .chat-header-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .icon-btn {
-            width: 40px;
-            height: 40px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .icon-btn:hover {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        /* Messages Area */
-        .messages-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .message {
-            display: flex;
-            gap: 1rem;
-            max-width: 85%;
-            animation: messageIn 0.3s ease-out;
-        }
-
-        @keyframes messageIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.user {
-            align-self: flex-end;
-            flex-direction: row-reverse;
-        }
-
-        .message-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            flex-shrink: 0;
-        }
-
-        .message.assistant .message-avatar {
-            background: var(--gradient);
-        }
-
-        .message.user .message-avatar {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-        }
-
-        .message-content {
-            background: var(--bg-input);
-            padding: 1rem 1.25rem;
-            border-radius: 16px;
-            line-height: 1.6;
-        }
-
-        .message.user .message-content {
-            background: var(--primary);
-            border-bottom-right-radius: 4px;
-        }
-
-        .message.assistant .message-content {
-            border-bottom-left-radius: 4px;
-        }
-
-        .message-meta {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-top: 0.5rem;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-
-        .confidence-badge {
-            padding: 0.125rem 0.5rem;
-            background: rgba(99, 102, 241, 0.2);
-            border-radius: 4px;
-            color: var(--primary-light);
-        }
-
-        .sentiment-badge {
-            padding: 0.125rem 0.5rem;
-            border-radius: 4px;
-        }
-
-        .sentiment-positive { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .sentiment-negative { background: rgba(239, 68, 68, 0.2); color: var(--error); }
-        .sentiment-neutral { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
-
-        /* Suggestions */
-        .suggestions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-        }
-
-        .suggestion-chip {
-            padding: 0.5rem 1rem;
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 9999px;
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .suggestion-chip:hover {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-        }
-
-        /* Typing Indicator */
-        .typing-indicator {
-            display: none;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem;
-            color: var(--text-muted);
-        }
-
-        .typing-indicator.active {
-            display: flex;
-        }
-
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-        }
-
-        .typing-dots span {
-            width: 8px;
-            height: 8px;
-            background: var(--text-muted);
-            border-radius: 50%;
-            animation: typingDot 1.4s infinite;
-        }
-
-        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typingDot {
-            0%, 60%, 100% { transform: translateY(0); }
-            30% { transform: translateY(-8px); }
-        }
-
-        /* Input Area */
-        .input-container {
-            padding: 1.5rem;
-            border-top: 1px solid var(--border);
-            background: var(--bg-card);
-        }
-
-        .input-wrapper {
-            display: flex;
-            gap: 1rem;
-            align-items: flex-end;
-        }
-
-        .input-field {
-            flex: 1;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1rem 1.25rem;
-            color: var(--text-primary);
-            font-size: 1rem;
-            resize: none;
-            min-height: 56px;
-            max-height: 150px;
-            transition: all 0.2s;
-        }
-
-        .input-field:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-        }
-
-        .input-field::placeholder {
-            color: var(--text-muted);
-        }
-
-        .send-btn {
-            width: 56px;
-            height: 56px;
-            background: var(--gradient);
-            border: none;
-            border-radius: 16px;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .send-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
-        }
-
-        .send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 320px;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .sidebar-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        .sidebar-card h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Stats */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 1rem;
-            background: var(--bg-input);
-            border-radius: 12px;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-light);
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 0.25rem;
-        }
-
-        /* Entity List */
-        .entity-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .entity-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.75rem;
-            background: var(--bg-input);
-            border-radius: 8px;
-            font-size: 0.875rem;
-        }
-
-        .entity-type {
-            color: var(--primary-light);
-            font-weight: 500;
-        }
-
-        /* Welcome Message */
-        .welcome-message {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-secondary);
-        }
-
-        .welcome-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .welcome-message h3 {
-            font-size: 1.5rem;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-        }
-
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .sidebar {
-                display: none;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .main-container {
-                padding: 1rem;
-            }
-
-            .header {
-                padding: 1rem;
-            }
-
-            .logo-text {
-                display: none;
-            }
-        }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nexus — Intelligence Platform</title>
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <header class="header">
-        <div class="logo">
-            <div class="logo-icon">🤖</div>
-            <span class="logo-text">Nexus AI</span>
-        </div>
-        <div class="status-badge">
-            <span class="status-dot"></span>
-            <span id="connection-status">Connected</span>
-        </div>
-    </header>
+    <!-- Ambient Background -->
+    <div class="ambient-background">
+        <div class="gradient-sphere sphere-1"></div>
+        <div class="gradient-sphere sphere-2"></div>
+        <div class="grid-overlay"></div>
+    </div>
 
-    <main class="main-container">
-        <div class="chat-container">
-            <div class="chat-header">
-                <h2>💬 Chat</h2>
-                <div class="chat-header-actions">
-                    <button class="icon-btn" onclick="clearChat()" title="Clear Chat">🗑️</button>
-                    <button class="icon-btn" onclick="exportChat()" title="Export">📥</button>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar glass-panel" id="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <h1 class="brand-name">Nexus<span class="version">v3</span></h1>
+                <button class="toggle-sidebar" id="close-sidebar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-label">System State</div>
+                <div class="status-card">
+                    <div class="status-indicator">
+                        <div class="ring-container">
+                            <div class="ringring"></div>
+                            <div class="circle"></div>
+                        </div>
+                        <span id="ws-status">Establishing uplink...</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="messages-container" id="messages">
-                <div class="welcome-message">
-                    <div class="welcome-icon">👋</div>
-                    <h3>Welcome to Nexus AI</h3>
-                    <p>Start a conversation by typing a message below.</p>
+            <div class="nav-section flex-1">
+                <div class="nav-label">Telemetry</div>
+                
+                <div class="telemetry-grid">
+                    <div class="metric-box">
+                        <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        <div class="metric-value" id="stat-latency">0<span class="unit">ms</span></div>
+                        <div class="metric-name">Network Latency</div>
+                    </div>
+                    
+                    <div class="metric-box">
+                        <svg class="metric-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        <div class="metric-value" id="stat-turns">0</div>
+                        <div class="metric-name">Exchanges</div>
+                    </div>
+
+                    <div class="metric-box full-width">
+                        <div class="flex-between">
+                            <span class="metric-name">Last Intent</span>
+                            <span class="badge" id="stat-intent">Initializing</span>
+                        </div>
+                        <div class="progress-bar-bg mt-2">
+                            <div class="progress-bar-fill" id="intent-confidence-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-label mt-6">Contextual Entities</div>
+                <div class="entity-container" id="entity-list">
+                    <div class="empty-state">No entities parsed</div>
                 </div>
             </div>
 
-            <div class="typing-indicator" id="typing-indicator">
-                <div class="typing-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+            <div class="sidebar-footer">
+                <button class="btn btn-secondary w-full" id="clear-memory-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    Purge Session Context
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <header class="top-bar glass-panel">
+                <button class="menu-btn" id="open-sidebar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+                </button>
+                <div class="context-switch">
+                    <label class="switch">
+                        <input type="checkbox" id="rag-toggle">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="switch-label">Deep Knowledge Retrieval (RAG)</span>
                 </div>
-                <span>Nexus is thinking...</span>
+            </header>
+
+            <div class="chat-viewport" id="chat-viewport">
+                <div class="hero-section" id="hero">
+                    <div class="hero-logo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <h2>How can I assist you today?</h2>
+                    <p>I am Nexus, an advanced reasoning agent.</p>
+                </div>
+                
+                <div class="messages-list" id="messages-list">
+                    <!-- Messages render here -->
+                </div>
+
+                <div class="typing-indicator glass-panel" id="typing-indicator">
+                    <div class="waveform">
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                    </div>
+                    <span>Processing vectors...</span>
+                </div>
             </div>
 
-            <div class="input-container">
-                <div class="input-wrapper">
+            <div class="input-region">
+                <div class="input-card glass-panel">
                     <textarea 
-                        class="input-field" 
-                        id="message-input" 
-                        placeholder="Type your message..."
-                        rows="1"
-                        onkeydown="handleKeyDown(event)"
+                        id="chat-input" 
+                        placeholder="Message Nexus..." 
+                        rows="1" 
+                        spellcheck="false"
                     ></textarea>
-                    <button class="send-btn" id="send-btn" onclick="sendMessage()">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button class="btn btn-primary" id="send-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                         </svg>
                     </button>
                 </div>
-            </div>
-        </div>
-
-        <aside class="sidebar">
-            <div class="sidebar-card">
-                <h3>📊 Session Stats</h3>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-messages">0</div>
-                        <div class="stat-label">Messages</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-avg-time">0ms</div>
-                        <div class="stat-label">Avg Response</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-confidence">-</div>
-                        <div class="stat-label">Avg Confidence</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="stat-sentiment">😐</div>
-                        <div class="stat-label">Sentiment</div>
-                    </div>
+                <div class="footer-note">
+                    Nexus may produce inaccurate information about people, places, or facts.
                 </div>
             </div>
+        </main>
+    </div>
 
-            <div class="sidebar-card">
-                <h3>🎯 Last Intent</h3>
-                <div class="entity-list" id="intent-display">
-                    <div class="entity-item">
-                        <span>No intent detected</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="sidebar-card">
-                <h3>🏷️ Extracted Entities</h3>
-                <div class="entity-list" id="entity-list">
-                    <div class="entity-item">
-                        <span style="color: var(--text-muted)">No entities yet</span>
-                    </div>
-                </div>
-            </div>
-        </aside>
-    </main>
-
-    <script>
-        // Configuration — auto-detect protocol & host so it works on any domain
-        const API_BASE = `${window.location.protocol}//${window.location.host}`;
-        const WS_PROTOCOL = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        let sessionId = null;
-        let ws = null;
-        let messageCount = 0;
-        let totalResponseTime = 0;
-        let totalConfidence = 0;
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            initWebSocket();
-            autoResizeTextarea();
-        });
-
-        // WebSocket connection
-        function initWebSocket() {
-            ws = new WebSocket(`${WS_PROTOCOL}//${window.location.host}/ws/chat`);
-
-            ws.onopen = () => {
-                updateConnectionStatus(true);
-                console.log('WebSocket connected');
-            };
-
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                handleWebSocketMessage(data);
-            };
-
-            ws.onclose = () => {
-                updateConnectionStatus(false);
-                console.log('WebSocket disconnected');
-                // Reconnect after 3 seconds
-                setTimeout(initWebSocket, 3000);
-            };
-
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                updateConnectionStatus(false);
-            };
-        }
-
-        function handleWebSocketMessage(data) {
-            switch (data.type) {
-                case 'connected':
-                    sessionId = data.payload.session_id;
-                    console.log('Session ID:', sessionId);
-                    break;
-                case 'typing':
-                    setTypingIndicator(data.payload.is_typing);
-                    break;
-                case 'response':
-                    addMessage('assistant', data.payload);
-                    updateStats(data.payload);
-                    break;
-                case 'error':
-                    console.error('Error:', data.payload.message);
-                    setTypingIndicator(false);
-                    break;
-            }
-        }
-
-        function updateConnectionStatus(connected) {
-            const statusEl = document.getElementById('connection-status');
-            statusEl.textContent = connected ? 'Connected' : 'Reconnecting...';
-            statusEl.parentElement.style.borderColor = connected 
-                ? 'rgba(16, 185, 129, 0.3)' 
-                : 'rgba(239, 68, 68, 0.3)';
-        }
-
-        // Send message
-        async function sendMessage() {
-            const input = document.getElementById('message-input');
-            const text = input.value.trim();
-
-            if (!text) return;
-
-            // Clear input
-            input.value = '';
-            input.style.height = 'auto';
-
-            // Remove welcome message if present
-            const welcome = document.querySelector('.welcome-message');
-            if (welcome) welcome.remove();
-
-            // Add user message
-            addMessage('user', { text });
-
-            // Send via WebSocket or REST
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'message',
-                    payload: { text }
-                }));
-            } else {
-                await sendViaREST(text);
-            }
-        }
-
-        async function sendViaREST(text) {
-            setTypingIndicator(true);
-
-            try {
-                const response = await fetch(`${API_BASE}/api/v1/chat`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, session_id: sessionId })
-                });
-
-                const data = await response.json();
-                sessionId = data.session_id;
-
-                setTypingIndicator(false);
-                addMessage('assistant', data);
-                updateStats(data);
-            } catch (error) {
-                console.error('Error:', error);
-                setTypingIndicator(false);
-                addMessage('assistant', { 
-                    text: 'Sorry, I encountered an error. Please try again.',
-                    type: 'error'
-                });
-            }
-        }
-
-        function addMessage(role, data) {
-            const container = document.getElementById('messages');
-            const message = document.createElement('div');
-            message.className = `message ${role}`;
-
-            const avatar = role === 'user' ? '👤' : '🤖';
-            const avatarHtml = `<div class="message-avatar">${avatar}</div>`;
-
-            let contentHtml = `<div class="message-content">${escapeHtml(data.text)}</div>`;
-
-            // Add metadata for assistant messages
-            if (role === 'assistant' && data.confidence !== undefined) {
-                const sentimentClass = getSentimentClass(data.sentiment);
-                contentHtml += `
-                    <div class="message-meta">
-                        <span class="confidence-badge">${Math.round(data.confidence * 100)}% confidence</span>
-                        <span class="sentiment-badge ${sentimentClass}">${data.sentiment || 'neutral'}</span>
-                        <span>${data.processing_time_ms?.toFixed(0) || 0}ms</span>
-                    </div>
-                `;
-
-                // Add suggestions
-                if (data.suggestions && data.suggestions.length > 0) {
-                    contentHtml += `
-                        <div class="suggestions">
-                            ${data.suggestions.map(s => 
-                                `<button class="suggestion-chip" onclick="useSuggestion('${escapeHtml(s)}')">${escapeHtml(s)}</button>`
-                            ).join('')}
-                        </div>
-                    `;
-                }
-            }
-
-            message.innerHTML = `
-                ${avatarHtml}
-                <div class="message-body">
-                    ${contentHtml}
-                </div>
-            `;
-
-            container.appendChild(message);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function useSuggestion(text) {
-            document.getElementById('message-input').value = text;
-            sendMessage();
-        }
-
-        function setTypingIndicator(show) {
-            const indicator = document.getElementById('typing-indicator');
-            indicator.classList.toggle('active', show);
-        }
-
-        function updateStats(data) {
-            messageCount++;
-            totalResponseTime += data.processing_time_ms || 0;
-            totalConfidence += data.confidence || 0;
-
-            document.getElementById('stat-messages').textContent = messageCount;
-            document.getElementById('stat-avg-time').textContent = 
-                Math.round(totalResponseTime / messageCount) + 'ms';
-            document.getElementById('stat-confidence').textContent = 
-                Math.round((totalConfidence / messageCount) * 100) + '%';
-
-            // Update sentiment emoji
-            const sentimentEmoji = {
-                'very_positive': '😄',
-                'positive': '🙂',
-                'neutral': '😐',
-                'negative': '😕',
-                'very_negative': '😞'
-            };
-            document.getElementById('stat-sentiment').textContent = 
-                sentimentEmoji[data.sentiment] || '😐';
-
-            // Update intent display
-            if (data.intent) {
-                document.getElementById('intent-display').innerHTML = `
-                    <div class="entity-item">
-                        <span class="entity-type">${data.intent}</span>
-                        <span>${Math.round(data.confidence * 100)}%</span>
-                    </div>
-                `;
-            }
-
-            // Update entities
-            if (data.entities && data.entities.length > 0) {
-                document.getElementById('entity-list').innerHTML = data.entities.map(e => `
-                    <div class="entity-item">
-                        <span>${escapeHtml(e.text)}</span>
-                        <span class="entity-type">${e.type}</span>
-                    </div>
-                `).join('');
-            }
-        }
-
-        function getSentimentClass(sentiment) {
-            if (!sentiment) return 'sentiment-neutral';
-            if (sentiment.includes('positive')) return 'sentiment-positive';
-            if (sentiment.includes('negative')) return 'sentiment-negative';
-            return 'sentiment-neutral';
-        }
-
-        function clearChat() {
-            const container = document.getElementById('messages');
-            container.innerHTML = `
-                <div class="welcome-message">
-                    <div class="welcome-icon">👋</div>
-                    <h3>Welcome to Nexus AI</h3>
-                    <p>Start a conversation by typing a message below.</p>
-                </div>
-            `;
-            messageCount = 0;
-            totalResponseTime = 0;
-            totalConfidence = 0;
-            document.getElementById('stat-messages').textContent = '0';
-            document.getElementById('stat-avg-time').textContent = '0ms';
-            document.getElementById('stat-confidence').textContent = '-';
-            document.getElementById('stat-sentiment').textContent = '😐';
-        }
-
-        function exportChat() {
-            const messages = document.querySelectorAll('.message');
-            let exportText = 'Nexus AI Chat Export\n';
-            exportText += '=' .repeat(50) + '\n\n';
-
-            messages.forEach(msg => {
-                const role = msg.classList.contains('user') ? 'User' : 'Nexus';
-                const content = msg.querySelector('.message-content').textContent;
-                exportText += `${role}: ${content}\n\n`;
-            });
-
-            const blob = new Blob([exportText], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'nexus-chat-export.txt';
-            a.click();
-        }
-
-        function handleKeyDown(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage();
-            }
-        }
-
-        function autoResizeTextarea() {
-            const textarea = document.getElementById('message-input');
-            textarea.addEventListener('input', () => {
-                textarea.style.height = 'auto';
-                textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
-            });
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-    </script>
+    <script src="/static/script.js"></script>
 </body>
 </html>

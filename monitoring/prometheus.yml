@@ -37,3 +37,9 @@ scrape_configs:
   - job_name: 'redis'
     static_configs:
       - targets: ['redis:6379']
+
+  # Qdrant metrics
+  - job_name: 'qdrant'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['qdrant:6333']

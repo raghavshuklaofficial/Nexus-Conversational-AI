@@ -1,170 +1,205 @@
-# Nexus - Conversational AI Chatbot
+# Nexus AI — Conversational Intelligence Platform
 
-A conversational AI system built with Python, using transformer models from HuggingFace for intent classification, entity extraction, and sentiment analysis. It supports multi-turn conversations with context tracking through a FastAPI backend (REST + WebSocket).
+![Nexus Logo Placeholder](docs/images/nexus-logo.png)
 
-I built this project to understand how production NLP systems work end-to-end — from raw text input to intelligent responses — without relying on external LLM APIs.
-
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-2.1+-EE4C2C?logo=pytorch&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?logo=fastapi&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
+Nexus is a production-grade, asynchronous Conversational AI platform. It combines traditional intent-based dialogue management with modern Retrieval-Augmented Generation (RAG) and LLM fallbacks to provide a resilient, intelligent, and fast conversational agent.
 
 ---
 
-## What it does
+## 📖 Project Overview
 
-- **Intent Classification** — Uses Sentence-BERT (`all-MiniLM-L6-v2`) with cosine similarity matching against 26 predefined intents
-- **Named Entity Recognition** — BERT-based NER (`dslim/bert-base-NER`) combined with regex patterns for email, phone, URLs etc.
-- **Sentiment Analysis** — RoBERTa model from Cardiff NLP for 5-class sentiment detection
-- **Dialogue Management** — Stateful sessions with entity memory, topic continuity, and context-aware responses
-- **REST + WebSocket API** — Async FastAPI backend with live chat support
-- **Web UI** — Simple chat interface with real-time WebSocket updates
+Nexus is built using a **Hexagonal Architecture (Ports and Adapters)**, ensuring that the core domain logic (NLU, dialogue, reasoning) is completely decoupled from infrastructure concerns (vector stores, databases, external LLM APIs). 
 
-## Project Structure
+### Key Features:
+- **Real-time Chat:** Async WebSockets and REST API support.
+- **NLU Pipeline:** Local fast inference for intent classification, entity extraction, and sentiment analysis using HuggingFace models.
+- **RAG Integration:** Vector-based search (FAISS/Qdrant) combined with a generator LLM to answer knowledge-based questions.
+- **Graceful Fallback:** If the user asks an off-topic question, the system falls back to a generalized LLM (GPT-2, Mistral, OpenAI) to dynamically generate an answer, preventing dead-ends.
+- **Immersive UI:** A modern, glassmorphism-styled frontend mimicking frontier AI agents.
+
+---
+
+## 🏗 Architecture
+
+```mermaid
+graph TD
+    Client[Web/Mobile Client]
+    WS[WebSocket Router]
+    REST[REST Router]
+    Chat[Chat Service]
+    NLU[NLU Service]
+    RAG[RAG Service]
+    Dialogue[Dialogue Manager]
+    LLM[LLM Provider]
+    Vector[Vector Store]
+    Cache[Redis/Memory Cache]
+
+    Client <--> |ws://| WS
+    Client <--> |http://| REST
+    WS --> Chat
+    REST --> Chat
+
+    Chat --> Cache
+    Chat --> NLU
+    Chat --> Dialogue
+    Chat --> RAG
+
+    Dialogue -.->|If Fallback| LLM
+    RAG --> Vector
+    RAG --> LLM
+```
+
+---
+
+## 📂 Folder Structure
 
 ```
-src/nexus/
-├── core/           # Main engine, session management, response models
-├── nlu/            # Intent classifier, entity extractor, sentiment, embeddings
-├── dialogue/       # Dialogue manager, intent handlers, state tracking
-├── data/           # Intent patterns and response templates (26 intents)
-├── api/            # FastAPI app, REST routes, WebSocket handler
-├── training/       # PyTorch training pipeline, dataset utils, metrics
-├── config.py       # Pydantic-based config with env var support
-└── cli.py          # CLI (chat, serve, train, analyze)
-
-tests/              # Unit tests
-frontend/           # Chat web UI
+Nexus-Conversational-AI/
+├── frontend/                 # Modern Glassmorphism Web UI
+│   ├── index.html            # Main markup
+│   ├── styles.css            # Styling and animations
+│   └── script.js             # WebSocket & REST logic
+├── src/nexus/
+│   ├── api/                  # FastAPI app, routes, WebSockets, dependencies
+│   ├── application/          # Service layer (Chat, RAG, Session, Ingestion)
+│   ├── core/                 # Legacy/Core utilities
+│   ├── data/                 # Dialogue templates and definitions
+│   ├── dialogue/             # Intent handlers and Dialogue Manager
+│   ├── domain/               # Pydantic models, interfaces (Ports)
+│   ├── infrastructure/       # Adapters (LLM, Vector Stores, Caching, Auth)
+│   └── nlu/                  # NLP models (Intent, Sentiment, Entities)
+├── docker-compose.yml        # Multi-container orchestration
+├── pyproject.toml            # Dependencies and tools configuration
+└── README.md                 # You are here
 ```
 
-## Quick Start
+---
 
+## 🚀 Installation & Setup
+
+### Prerequisites
+- Python 3.10+
+- Docker (optional, for Redis/Qdrant)
+- Git
+
+### 1. Clone the repository
 ```bash
-# clone and setup
 git clone https://github.com/raghavshuklaofficial/Nexus-Conversational-AI.git
 cd Nexus-Conversational-AI
-
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-
-pip install -e .
-
-# interactive chat mode
-nexus chat
-
-# or start the API server
-nexus serve --port 8000
 ```
 
-First run downloads transformer models (~500MB total) so give it a minute.
-
-### Docker
-
-```bash
-docker-compose up -d
-
-# with prometheus monitoring
-docker-compose --profile monitoring up -d
+### 2. Environment Setup
+Create a `.env` file in the root directory:
+```env
+NEXUS_ENVIRONMENT=development
+NEXUS_CACHE_BACKEND=memory
+NEXUS_VECTOR_STORE_BACKEND=faiss
+NEXUS_KAFKA_ENABLED=false
+NEXUS_LLM_PROVIDER=local
+NEXUS_NLU_DEVICE=cpu
 ```
 
-## API
-
-### Chat endpoint
-
-```bash
-curl -X POST http://localhost:8000/api/v1/chat \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Hello, how are you?"}'
-```
-
-```json
-{
-  "id": "msg_7f3a9b2c",
-  "text": "Hello! How can I assist you today?",
-  "type": "standard",
-  "session_id": "sess_4e8d1a5f",
-  "suggestions": ["Tell me a joke", "What can you do?"],
-  "sentiment": "positive",
-  "confidence": 0.94,
-  "intent": "greeting",
-  "entities": [],
-  "processing_time_ms": 45.2
-}
-```
-
-### Other endpoints
-
-| Method | Endpoint | What it does |
-|--------|----------|-------------|
-| POST | `/api/v1/chat` | Send message, get response |
-| POST | `/api/v1/analyze` | NLU analysis only (no response generation) |
-| GET | `/api/v1/sessions/{id}` | Get session info |
-| DELETE | `/api/v1/sessions/{id}` | End a session |
-| GET | `/health` | Health check |
-
-### WebSocket
-
-```javascript
-const ws = new WebSocket('ws://localhost:8000/ws/chat');
-
-ws.onopen = () => {
-  ws.send(JSON.stringify({
-    type: 'message',
-    payload: { text: 'Hello!' }
-  }));
-};
-
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log(data.payload.text);
-};
-```
-
-## How it works
-
-1. User message goes through the NLU pipeline — intent classification, entity extraction, and sentiment analysis all run in parallel using `asyncio.gather`
-2. Results get passed to the dialogue manager which picks the right handler or template
-3. Response gets adapted based on conversation context (session history, sentiment trend)
-4. Session state updates with the new turn for next interaction
-
-Intent classification works by pre-computing sentence embeddings for each intent's training patterns at startup, then comparing new input via cosine similarity. Not as flexible as a full LLM but it's fast (~45ms per request) and predictable for structured conversations.
-
-## Models
-
-| Component | Model |
-|-----------|-------|
-| Intent Classification | `sentence-transformers/all-MiniLM-L6-v2` |
-| Entity Extraction | `dslim/bert-base-NER` |
-| Sentiment Analysis | `cardiffnlp/twitter-roberta-base-sentiment` |
-| Embeddings | `sentence-transformers/all-mpnet-base-v2` |
-
-## Running Tests
-
+### 3. Install Dependencies
 ```bash
 pip install -e ".[dev]"
-pytest tests/ -v
+```
+*Note: This installs FastAPI, Transformers, Sentence-Transformers, FAISS, and other core libraries.*
+
+### 4. Start the Application
+```bash
+python -m uvicorn nexus.api.app:app --host 0.0.0.0 --port 8000
+```
+Visit `http://localhost:8000` to access the immersive chat interface.
+
+---
+
+## 🧠 Reasoning & Execution Flow
+
+When a message arrives via WebSocket or REST:
+
+1. **Validation & Normalization:** Input is sanitized and session memory is loaded from cache.
+2. **NLU Pipeline:** `NLUService` runs the message through a local Sentence-Transformer to classify the intent, extract entities via BERT-NER, and score sentiment.
+3. **Routing Strategy:**
+   - **RAG Enabled:** If the user toggled deep knowledge, `RAGService` generates embeddings, queries the vector store, and prompts the LLM with the context to generate an answer.
+   - **Dialogue Enabled:** If RAG is off, `DialogueManager` attempts to match the intent to a known template (e.g., greeting, joke).
+4. **Fallback Mechanism:** If the intent is `fallback` (not understood by templates), the system **routes to the LLM directly**, instructing it to answer the question gracefully (setting intent to `general_qa`). This ensures the bot *always* attempts a real answer instead of repeating "I don't know".
+5. **Response Formatting:** Latency is tracked, citations (if any) are appended, and the payload is sent back to the client.
+
+---
+
+## 🛡 Dependency Explanations
+
+- **FastAPI:** Core async web framework handling HTTP and WebSockets.
+- **Transformers / Sentence-Transformers:** Local ML inference for embeddings, sentiment, and local text generation (GPT-2 default for local development).
+- **FAISS:** Local, fast, in-memory vector store for RAG.
+- **Pydantic:** Robust data validation across the domain layer.
+- **Structlog:** Structured JSON logging for production observability.
+
+---
+
+## 🛠 Troubleshooting
+
+- **Server hangs on startup:** Downloading the HuggingFace models (BERT, RoBERTa, GPT-2) takes time on the first run. Wait for the `application_ready` log.
+- **GPU Out of Memory (OOM):** If using CUDA (`NEXUS_NLU_DEVICE=cuda`), ensure you have at least 8GB VRAM. Fall back to `cpu` in your `.env`.
+- **WebSocket Disconnections:** Ensure no proxies (like Nginx) are aggressively closing idle connections without handling ping/pong frames.
+
+---
+
+## 📸 Screenshots
+
+*(Placeholders for future screenshots)*
+
+| Immersive Chat UI | Knowledge RAG System |
+|-------------------|----------------------|
+| ![Chat UI](docs/images/chat-ui.png) | ![RAG System](docs/images/rag-system.png) |
+
+---
+
+## ☁️ Deployment Guide
+
+Nexus is production-ready and Dockerized.
+
+```bash
+docker-compose up --build -d
 ```
 
-## Tech Stack
+This will spin up:
+1. The **Nexus API** container.
+2. A **Redis** container (for robust session cache and message brokering).
+3. A **Qdrant** container (for production vector search).
+4. **Prometheus / Grafana** for metrics.
 
-- Python 3.10+, PyTorch, HuggingFace Transformers
-- FastAPI + Uvicorn (async), WebSockets
-- Pydantic v2 for config and validation
-- Docker, Nginx, Prometheus for deployment
-- Pytest with async support
+*Tip: For production, change `NEXUS_LLM_PROVIDER` to `openai` or configure a dedicated vLLM instance.*
 
-## TODO / Future work
+---
 
-- [ ] Fine-tune custom intent model on domain data
-- [ ] Hindi and multilingual support
-- [ ] RAG pipeline for knowledge-base queries  
-- [ ] Speech interface (STT + TTS)
-- [ ] Real-time analytics dashboard
+## 🔮 Future Improvements
 
-## Author
+1. **Multi-Agent Orchestration:** Route complex queries to specialized sub-agents.
+2. **Tool Use (Function Calling):** Allow the LLM to trigger internal APIs (e.g., checking weather, booking tickets).
+3. **Voice Interface:** Integrate WebRTC for real-time voice-to-voice reasoning.
+4. **Streaming Answers:** Implement server-sent events (SSE) for word-by-word streaming in the UI.
 
-**Raghav Shukla** — [GitHub](https://github.com/raghavshuklaofficial)
+---
 
-## License
+## 📚 API Documentation
 
-MIT — see [LICENSE](LICENSE) for details.
+Once the server is running, interactive API docs are available at:
+- **Swagger UI:** `http://localhost:8000/docs`
+- **ReDoc:** `http://localhost:8000/redoc`
+
+### Primary Endpoints
+- `POST /api/v1/chat` - Submit a message and get a JSON response.
+- `GET /api/v1/sessions/{id}` - Retrieve chat history.
+- `WS /ws/chat` - Connect to the real-time websocket.
+
+---
+
+## 👨‍💻 Developer Notes
+
+- The project enforces strict typing. Run `mypy` before committing.
+- Ensure all business logic remains inside `src/nexus/application` or `src/nexus/domain`. Keep `src/nexus/api` strictly for HTTP/WS routing.
+- The UI is vanilla CSS/JS intentionally to minimize frontend build steps for backend-focused developers.
+
+---
+*Built for the future of Conversational AI.*

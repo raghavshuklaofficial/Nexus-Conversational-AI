@@ -212,7 +212,7 @@ async def websocket_chat(websocket: WebSocket) -> None:
             
             # Handle message types
             if message.type == "message":
-                await _handle_chat_message(connection_id, message, session, engine)
+                await _handle_chat_message(connection_id, message, session, engine, websocket)
             
             elif message.type == "ping":
                 await manager.send_message(connection_id, WebSocketMessage(
@@ -249,9 +249,11 @@ async def _handle_chat_message(
     message: WebSocketMessage,
     session: ConversationSession,
     engine: ConversationEngine,
+    websocket: WebSocket | None = None,
 ) -> None:
-    """Handle incoming chat message."""
+    """Handle incoming chat message via the new ChatService if available."""
     text = message.payload.get("text", "").strip()
+    use_rag = message.payload.get("use_rag", False)
     
     if not text:
         await manager.send_message(connection_id, WebSocketMessage(
@@ -267,29 +269,63 @@ async def _handle_chat_message(
     ))
     
     try:
-        # Process message
-        response = await engine.process(text, session=session)
+        # Try the new ChatService first (has LLM, RAG, etc.)
+        chat_service = getattr(websocket.app.state, "chat_service", None) if websocket else None
         
-        # Stop typing indicator
-        await manager.send_message(connection_id, WebSocketMessage(
-            type="typing",
-            payload={"is_typing": False},
-        ))
-        
-        # Send response
-        await manager.send_message(connection_id, WebSocketMessage(
-            type="response",
-            payload={
-                "id": str(response.id),
-                "text": response.text,
-                "type": response.type.value,
-                "suggestions": response.suggestions,
-                "sentiment": response.metadata.sentiment.value,
-                "confidence": response.metadata.detected_intent.confidence if response.metadata.detected_intent else 0.0,
-                "intent": response.metadata.detected_intent.name if response.metadata.detected_intent else "unknown",
-                "processing_time_ms": response.metadata.processing_time_ms,
-            },
-        ))
+        if chat_service is not None:
+            from nexus.domain.models import ChatResponse
+            resp: ChatResponse = await chat_service.chat(
+                text=text,
+                session_id=str(session.id),
+                use_rag=use_rag,
+                top_k=3,
+            )
+            
+            await manager.send_message(connection_id, WebSocketMessage(
+                type="typing",
+                payload={"is_typing": False},
+            ))
+            
+            await manager.send_message(connection_id, WebSocketMessage(
+                type="response",
+                payload={
+                    "text": resp.answer,
+                    "answer": resp.answer,
+                    "intent": resp.intent,
+                    "sentiment": resp.sentiment,
+                    "sentiment_score": resp.sentiment_score,
+                    "processing_time_ms": resp.latency.total_ms,
+                    "latency": resp.latency.model_dump(),
+                    "entities": resp.entities,
+                    "citations": [c.model_dump() for c in resp.citations],
+                    "cache_hit": resp.cache_hit,
+                    "model_name": resp.model_name,
+                    "suggestions": resp.suggestions,
+                    "session_id": resp.session_id,
+                },
+            ))
+        else:
+            # Fallback to old engine
+            response = await engine.process(text, session=session)
+            
+            await manager.send_message(connection_id, WebSocketMessage(
+                type="typing",
+                payload={"is_typing": False},
+            ))
+            
+            await manager.send_message(connection_id, WebSocketMessage(
+                type="response",
+                payload={
+                    "id": str(response.id),
+                    "text": response.text,
+                    "type": response.type.value,
+                    "suggestions": response.suggestions,
+                    "sentiment": response.metadata.sentiment.value,
+                    "confidence": response.metadata.detected_intent.confidence if response.metadata.detected_intent else 0.0,
+                    "intent": response.metadata.detected_intent.name if response.metadata.detected_intent else "unknown",
+                    "processing_time_ms": response.metadata.processing_time_ms,
+                },
+            ))
     
     except Exception as e:
         logger.error("message_processing_error", error=str(e))

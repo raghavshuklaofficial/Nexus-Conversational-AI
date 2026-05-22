@@ -1,8 +1,9 @@
 """
 Nexus Conversational AI
 
-Transformer-based chatbot with intent classification, NER,
-sentiment analysis and multi-turn dialogue support.
+Production-grade conversational AI platform with RAG,
+async document ingestion, transformer NLU, and multi-turn
+dialogue management.
 """
 
 from nexus.core.engine import ConversationEngine
@@ -12,7 +13,7 @@ from nexus.nlu.extractor import EntityExtractor
 from nexus.dialogue.manager import DialogueManager
 from nexus.dialogue.state import DialogueState
 
-__version__ = "2.0.0"
+__version__ = "3.0.0"
 __author__ = "Raghav Shukla"
 
 __all__ = [

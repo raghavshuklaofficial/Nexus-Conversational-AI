@@ -66,11 +66,14 @@ class NLUConfig(BaseSettings):
     def validate_device(cls, v: str) -> str:
         """Validate and resolve device setting."""
         if v == "auto":
-            import torch
-            if torch.cuda.is_available():
-                return "cuda"
-            elif torch.backends.mps.is_available():
-                return "mps"
+            try:
+                import torch
+                if torch.cuda.is_available():
+                    return "cuda"
+                elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                    return "mps"
+            except ImportError:
+                pass
             return "cpu"
         return v
 
@@ -108,7 +111,9 @@ class APIConfig(BaseSettings):
     enable_cors: bool = Field(default=True)
     allowed_origins: list[str] = Field(default=["*"])
     api_key_header: str = Field(default="X-API-Key")
+    api_key: str = Field(default="", description="API key for protected endpoints (empty = disabled)")
     rate_limit_per_minute: int = Field(default=60, ge=1)
+    max_request_size_mb: int = Field(default=10, ge=1, le=100)
     
     # WebSocket
     ws_heartbeat_interval: int = Field(default=30, ge=5, le=300)
@@ -191,6 +196,24 @@ class NexusConfig(BaseSettings):
     cache: CacheConfig = Field(default_factory=CacheConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     metrics: MetricsConfig = Field(default_factory=MetricsConfig)
+    
+    # ---- New infrastructure settings ----
+    
+    # Vector store
+    vector_store_backend: str = Field(default="qdrant", description="'qdrant' or 'faiss'")
+    qdrant_url: str = Field(default="http://localhost:6333")
+    qdrant_api_key: str = Field(default="")
+    
+    # LLM
+    llm_provider: str = Field(default="local", description="'local' or 'openai'")
+    llm_model: str = Field(default="Qwen/Qwen1.5-0.5B-Chat", description="HuggingFace model name for local provider")
+    openai_base_url: str = Field(default="https://api.openai.com/v1")
+    openai_api_key: str = Field(default="")
+    openai_model: str = Field(default="gpt-3.5-turbo")
+    
+    # Kafka
+    kafka_enabled: bool = Field(default=False)
+    kafka_bootstrap_servers: str = Field(default="localhost:9092")
     
     @model_validator(mode="after")
     def setup_directories(self) -> "NexusConfig":

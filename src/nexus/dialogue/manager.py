@@ -65,10 +65,12 @@ class DialogueManager:
         
         intent_name = state.intent.name
         
-        # Try handler first
+        # 1. Try a dedicated handler (greeting, goodbye, help, etc.)
+        #    But NOT the default/fallback handler — we want to try templates first.
         handler = self._handler_registry.get_handler(state)
         
-        if handler:
+        if handler and handler.intent == intent_name:
+            # Only use if it's a SPECIFIC handler for this intent, not the default fallback
             try:
                 response = await handler.handle(state)
                 response = self._adapt_response(response, state)
@@ -80,8 +82,22 @@ class DialogueManager:
                     error=str(e),
                 )
         
-        # Fall back to template-based response
-        return await self._generate_template_response(state)
+        # 2. Try template-based response from INTENT_DATABASE
+        #    (this covers identity, joke, weather, thanks, booking, etc.)
+        template_response = await self._generate_template_response(state)
+        if template_response.get("type") != "fallback_default":
+            return template_response
+        
+        # 3. Last resort: use the default fallback handler
+        if handler:
+            try:
+                response = await handler.handle(state)
+                response = self._adapt_response(response, state)
+                return response
+            except Exception as e:
+                logger.error("fallback_handler_error", error=str(e))
+        
+        return template_response
     
     async def _generate_template_response(
         self,
@@ -105,10 +121,10 @@ class DialogueManager:
                 "suggestions": self._get_suggestions(state),
             }
         
-        # Default fallback
+        # Default fallback — no template found for this intent
         return {
             "text": "I understand. How can I help you further?",
-            "type": "standard",
+            "type": "fallback_default",
             "suggestions": ["Tell me more", "Help", "Something else"],
         }
     

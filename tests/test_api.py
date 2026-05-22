@@ -17,9 +17,12 @@ class TestHealthEndpoint:
         
         app = create_app()
         
-        # Mock the lifespan
-        with patch('nexus.api.app.ConversationEngine') as mock_engine:
+        # Mock the lifespan's ConversationEngine and services initialization
+        with patch('nexus.core.engine.ConversationEngine') as mock_engine, \
+             patch('nexus.api.dependencies.initialize_services', new_callable=AsyncMock) as mock_init, \
+             patch('nexus.api.dependencies.shutdown_services', new_callable=AsyncMock):
             mock_engine.return_value.is_initialized = True
+            mock_init.return_value = {}
             
             client = TestClient(app)
             response = client.get("/health")

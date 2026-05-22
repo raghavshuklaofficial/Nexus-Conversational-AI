@@ -74,6 +74,14 @@ def mock_nexus_config(mock_nlu_config, mock_dialogue_config, mock_api_config):
     config.nlu = mock_nlu_config
     config.dialogue = mock_dialogue_config
     config.api = mock_api_config
+    config.cache = MagicMock()
+    config.cache.backend = "memory"
+    config.cache.default_ttl = 3600
+    config.vector_store_backend = "faiss"
+    config.qdrant_url = "http://localhost:6333"
+    config.kafka_enabled = False
+    config.llm_provider = "local"
+    config.llm_model = "gpt2"
     return config
 
 
@@ -83,11 +91,7 @@ def sample_intents():
     return {
         "greeting": {
             "patterns": [
-                "hello",
-                "hi there",
-                "hey",
-                "good morning",
-                "good evening",
+                "hello", "hi there", "hey", "good morning", "good evening",
             ],
             "responses": [
                 "Hello! How can I assist you today?",
@@ -96,10 +100,7 @@ def sample_intents():
         },
         "goodbye": {
             "patterns": [
-                "bye",
-                "goodbye",
-                "see you later",
-                "take care",
+                "bye", "goodbye", "see you later", "take care",
             ],
             "responses": [
                 "Goodbye! Have a great day!",
@@ -108,9 +109,7 @@ def sample_intents():
         },
         "thanks": {
             "patterns": [
-                "thank you",
-                "thanks",
-                "appreciate it",
+                "thank you", "thanks", "appreciate it",
             ],
             "responses": [
                 "You're welcome!",
@@ -126,35 +125,10 @@ def sample_entities():
     from nexus.core.response import Entity
     
     return [
-        Entity(
-            text="John Smith",
-            type="PERSON",
-            confidence=0.95,
-            start_pos=0,
-            end_pos=10,
-        ),
-        Entity(
-            text="john@example.com",
-            type="EMAIL",
-            confidence=0.99,
-            start_pos=20,
-            end_pos=36,
-            normalized_value="john@example.com",
-        ),
-        Entity(
-            text="New York",
-            type="LOCATION",
-            confidence=0.92,
-            start_pos=40,
-            end_pos=48,
-        ),
-        Entity(
-            text="tomorrow",
-            type="DATE",
-            confidence=0.88,
-            start_pos=60,
-            end_pos=68,
-        ),
+        Entity(text="John Smith", type="PERSON", confidence=0.95, start_pos=0, end_pos=10),
+        Entity(text="john@example.com", type="EMAIL", confidence=0.99, start_pos=20, end_pos=36),
+        Entity(text="New York", type="LOCATION", confidence=0.92, start_pos=40, end_pos=48),
+        Entity(text="tomorrow", type="DATE", confidence=0.88, start_pos=60, end_pos=68),
     ]
 
 
@@ -180,15 +154,10 @@ def conversation_session(mock_dialogue_config):
 # Markers
 def pytest_configure(config):
     """Configure pytest markers."""
-    config.addinivalue_line(
-        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
-    )
-    config.addinivalue_line(
-        "markers", "integration: marks tests as integration tests"
-    )
-    config.addinivalue_line(
-        "markers", "e2e: marks tests as end-to-end tests"
-    )
+    config.addinivalue_line("markers", "unit: Unit tests")
+    config.addinivalue_line("markers", "integration: Integration tests requiring infrastructure")
+    config.addinivalue_line("markers", "slow: Slow tests requiring model loading")
+    config.addinivalue_line("markers", "e2e: End-to-end tests")
 
 
 # Test environment setup
@@ -198,9 +167,9 @@ def setup_test_environment():
     os.environ["NEXUS_ENVIRONMENT"] = "testing"
     os.environ["NEXUS_DEBUG"] = "true"
     os.environ["NEXUS_LOG_LEVEL"] = "DEBUG"
+    os.environ["NEXUS_NLU_DEVICE"] = "cpu"
     
     yield
     
-    # Cleanup
-    for key in ["NEXUS_ENVIRONMENT", "NEXUS_DEBUG", "NEXUS_LOG_LEVEL"]:
+    for key in ["NEXUS_ENVIRONMENT", "NEXUS_DEBUG", "NEXUS_LOG_LEVEL", "NEXUS_NLU_DEVICE"]:
         os.environ.pop(key, None)

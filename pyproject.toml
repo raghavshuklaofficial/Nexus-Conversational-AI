@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nexus-conversational-ai"
-version = "2.0.0"
+version = "3.0.0"
 description = "Conversational AI engine with transformer-based NLU, dialogue management, and a FastAPI backend"
 readme = "README.md"
 license = {text = "MIT"}
@@ -53,6 +53,9 @@ dependencies = [
     "sqlalchemy>=2.0.25",
     "alembic>=1.13.0",
     "aiosqlite>=0.19.0",
+    # RAG & Infrastructure
+    "qdrant-client>=1.7.0",
+    "aiokafka>=0.10.0",
 ]
 
 [project.optional-dependencies]
@@ -73,7 +76,10 @@ docs = [
     "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.24.0",
 ]
-all = ["nexus-conversational-ai[dev,docs]"]
+faiss = [
+    "faiss-cpu>=1.7.4",
+]
+all = ["nexus-conversational-ai[dev,docs,faiss]"]
 
 [project.scripts]
 nexus = "nexus.cli:app"
@@ -120,8 +126,14 @@ plugins = ["pydantic.mypy"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-v --cov=nexus --cov-report=term-missing --cov-report=html"
+addopts = "-v --tb=short"
 filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests requiring infrastructure",
+    "slow: Slow tests requiring model loading",
+    "e2e: End-to-end tests",
+]
 
 [tool.coverage.run]
 source = ["src/nexus"]
