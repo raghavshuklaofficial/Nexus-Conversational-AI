@@ -145,15 +145,15 @@ When a message arrives via WebSocket or REST:
 
 ---
 
-## 📸 Screenshots
 
-*(Placeholders for future screenshots)*
+## 📸 Screenshots
 
 | Immersive Chat UI | Knowledge RAG System |
 |-------------------|----------------------|
 | ![Chat UI](docs/images/chat-ui.png) | ![RAG System](docs/images/rag-system.png) |
 
 ---
+
 
 ## ☁️ Deployment Guide
 
