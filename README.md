@@ -1,7 +1,5 @@
 # Nexus AI — Conversational Intelligence Platform
 
-![Nexus Logo Placeholder](docs/images/nexus-logo.png)
-
 Nexus is a production-grade, asynchronous Conversational AI platform. It combines traditional intent-based dialogue management with modern Retrieval-Augmented Generation (RAG) and LLM fallbacks to provide a resilient, intelligent, and fast conversational agent.
 
 ---
@@ -142,15 +140,6 @@ When a message arrives via WebSocket or REST:
 - **Server hangs on startup:** Downloading the HuggingFace models (BERT, RoBERTa, GPT-2) takes time on the first run. Wait for the `application_ready` log.
 - **GPU Out of Memory (OOM):** If using CUDA (`NEXUS_NLU_DEVICE=cuda`), ensure you have at least 8GB VRAM. Fall back to `cpu` in your `.env`.
 - **WebSocket Disconnections:** Ensure no proxies (like Nginx) are aggressively closing idle connections without handling ping/pong frames.
-
----
-
-
-## 📸 Screenshots
-
-| Immersive Chat UI | Knowledge RAG System |
-|-------------------|----------------------|
-| ![Chat UI](docs/images/chat-ui.png) | ![RAG System](docs/images/rag-system.png) |
 
 ---
 
